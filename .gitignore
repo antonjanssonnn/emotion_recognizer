@@ -1,1 +1,6 @@
 captured_images/
+venv/
+build/
+dist/
+*.spec
+__pycache__/
