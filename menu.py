@@ -1,7 +1,6 @@
 import sys
 from PySide6.QtWidgets import QApplication, QLabel, QWidget, QVBoxLayout
-from PySide6.QtGui import QScreen
-from PySide6.QtGui import QImage, QPixmap, QKeyEvent
+from PySide6.QtGui import QScreen, QImage, QPixmap, QKeyEvent
 from PySide6.QtCore import QTimer, Qt
 import cv2
 from emotion import EmotionAnalyzer
@@ -38,7 +37,6 @@ class EmotionApp(QWidget):
         width, height = screen_size.width(), screen_size.height()
         window_width = width * 0.8
         window_height = height * 0.8
-        print(f"Screen: {width}x{height}, Window: {window_width}x{window_height}")
         self.resize(window_width, window_height)
         self.move((width - window_width) // 2, (height - window_height) // 2)
         self.setFixedSize(window_width, window_height)
@@ -55,8 +53,6 @@ class EmotionApp(QWidget):
         pixmap = QPixmap.fromImage(q_img)
         scaled_pixmap = pixmap.scaled(self.image_label.width(), self.image_label.height(), Qt.KeepAspectRatio, Qt.SmoothTransformation)
         self.image_label.setPixmap(scaled_pixmap)
-
-
 
     def closeEvent(self, event):
         print("Cleaning up resources...")
@@ -96,30 +92,17 @@ class EmotionApp(QWidget):
         print(f"Image saved as {filename}")
 
     def annotate_frame(self, frame, results):
-        display_width = self.image_label.width()
-        display_height = self.image_label.height()
-        original_height, original_width = frame.shape[:2]
-        scaling_factor_x = display_width / original_width
-        scaling_factor_y = display_height / original_height
-
-        print(f"Display Size: {display_width}x{display_height}, Original Size: {original_width}x{original_height}")
-        print(f"Scaling Factors: X={scaling_factor_x}, Y={scaling_factor_y}")
-        # Ensure results are processed correctly
         for result in results:
-            # Assuming result is a dictionary with all data directly accessible
             region = result[0]['region']
-            print(f'region: {region}')
-            x = int(region['x'] * scaling_factor_x)
-            y = int(region['y'] * scaling_factor_y)
-            w = int(region['w'] * scaling_factor_x)
-            h = int(region['h'] * scaling_factor_y)
+            x, y, w, h = region['x'], region['y'], region['w'], region['h']
+
+            # Draw the bounding box
+            cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
             emotion = result[0]['dominant_emotion']
             age = result[0]['age']
-            gender = result[0]['dominant_gender']  # assuming dominant_gender directly gives the string
+            gender = result[0]['dominant_gender']
 
-            # Draw rectangle and text for emotion, age, gender
-            # Ensure coordinates and scaling are managed correctly for high-quality display
-            cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
+            # Draw text for emotion, age, gender
             cv2.putText(frame, f'Age: {age}', (x, y + h + 20), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 2)
             cv2.putText(frame, f'Emotion: {emotion}', (x, y + h + 40), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 2)
             cv2.putText(frame, f'Gender: {gender}', (x, y + h + 60), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 2)
