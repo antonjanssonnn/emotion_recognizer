@@ -2,7 +2,7 @@ import cv2
 from deepface import DeepFace
 import sqlite3
 import os
-from PIL import Image, ImageFont, ImageDraw
+from PIL import Image
 import numpy as np
 
 

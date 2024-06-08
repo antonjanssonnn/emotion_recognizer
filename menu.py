@@ -1,5 +1,5 @@
 import sys
-from PySide6.QtWidgets import QApplication, QLabel, QWidget, QVBoxLayout
+from PySide6.QtWidgets import QApplication, QLabel, QWidget, QVBoxLayout, QPushButton
 from PySide6.QtGui import QScreen, QImage, QPixmap, QKeyEvent
 from PySide6.QtCore import QTimer, Qt
 import cv2
@@ -12,6 +12,8 @@ class EmotionApp(QWidget):
         super().__init__()
         self.emotion_analyzer = EmotionAnalyzer()
         self.live_video = True
+        self.current_frame = None
+        self.current_results = None
         self.initUI()
 
     def initUI(self):
@@ -23,7 +25,24 @@ class EmotionApp(QWidget):
         # Image display widget
         self.image_label = QLabel(self)
         layout.addWidget(self.image_label)
-        
+
+        # Capture, Accept, and Discard buttons
+        self.capture_button = QPushButton("Capture", self)
+        self.accept_button = QPushButton("Accept", self)
+        self.discard_button = QPushButton("Discard", self)
+        layout.addWidget(self.capture_button)
+        layout.addWidget(self.accept_button)
+        layout.addWidget(self.discard_button)
+
+        # Disable Accept and Discard buttons initially
+        self.accept_button.setEnabled(False)
+        self.discard_button.setEnabled(False)
+
+        # Connect buttons to their respective functions
+        self.capture_button.clicked.connect(self.capture_image)
+        self.accept_button.clicked.connect(self.accept_image)
+        self.discard_button.clicked.connect(self.discard_image)
+
         # Timer for capturing images
         self.timer = QTimer(self)
         self.timer.timeout.connect(self.update_frame)
@@ -61,16 +80,16 @@ class EmotionApp(QWidget):
 
     def keyPressEvent(self, event: QKeyEvent):
         if event.key() == Qt.Key_Space:
-            self.take_picture()
+            self.capture_image()
             print("Picture is captured!")
-        elif event.key() == Qt.Key_R:  # Resume live video by pressing 'R'
+        elif event.key() == Qt.Key_R:
             self.live_video = True
             print("Resuming live feed...")
         elif event.key() == Qt.Key_Q:
             print("Exiting... Bye!")
             self.close()
 
-    def take_picture(self):
+    def capture_image(self):
         self.live_video = False
         frame = self.emotion_analyzer.capture_frame()
         if frame is not None:
@@ -78,18 +97,56 @@ class EmotionApp(QWidget):
             if results:  # If results are present, annotate the frame
                 annotated_frame = self.annotate_frame(frame, results)
                 self.display_image(annotated_frame)  # Display annotated frame in GUI
-                self.save_image(annotated_frame)  # Save the annotated frame
+                self.current_frame = annotated_frame  # Save the current frame for later use
+                self.current_results = results  # Save the current results for later use
             else:
                 self.display_image(frame)  # Display unannotated frame if no faces detected
-                self.save_image(frame)  # Save the unannotated frame
+                self.current_frame = frame  # Save the current frame for later use
+                self.current_results = None
+            
+            # Enable Accept and Discard buttons, disable Capture button
+            self.update_button_states(accept_button=True,
+                                      discard_button=True,
+                                      capture_button=False,
+                                     )
         else:
             print("No frame captured to process.")
+
+    def accept_image(self):
+        # Save the current frame and add data to the database if there are results
+        if self.current_results:
+            self.save_image(self.current_frame)
+            self.add_to_database(self.current_results)
+        # Disable Accept and Discard buttons, enable Capture button and resume live feed
+        self.update_button_states(accept_button=False,
+                                  discard_button=False,
+                                  capture_button=True,
+                                 )
+        self.live_video = True
+
+    def discard_image(self):
+        # Disable Accept and Discard buttons, enable Capture button and resume live feed
+        self.update_button_states(accept_button=False,
+                                  discard_button=False,
+                                  capture_button=True,
+                                 )
+        self.live_video = True
+        print("Image was discarded!")
 
     def save_image(self, frame):
         timestamp = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
         filename = f'captured_images/{timestamp}.png'
         cv2.imwrite(filename, frame)
         print(f"Image saved as {filename}")
+
+    def add_to_database(self, results):
+        for result in results:
+            emotion = result[0]['dominant_emotion']
+            age = result[0]['age']
+            gender = result[0]['dominant_gender']
+            self.emotion_analyzer.cursor.execute('INSERT INTO emotions (emotion, age, gender) VALUES (?, ?, ?)', (emotion, str(age), gender))
+            self.emotion_analyzer.conn.commit()
+        print("Data added to database")
 
     def annotate_frame(self, frame, results):
         for result in results:
@@ -113,6 +170,11 @@ class EmotionApp(QWidget):
                 frame = self.emotion_analyzer.add_emoji_to_frame(frame, emoji_path, (x, y - 50))
 
         return frame
+    
+    def update_button_states(self, *, accept_button, discard_button, capture_button):
+        self.accept_button.setEnabled(accept_button)
+        self.discard_button.setEnabled(discard_button)
+        self.capture_button.setEnabled(capture_button)
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
