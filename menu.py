@@ -8,6 +8,9 @@ import datetime
 
 
 class EmotionApp(QWidget):
+    WINDOW_WIDTH_RATIO = 0.8
+    WINDOW_HEIGHT_RATIO = 0.8
+
     def __init__(self):
         super().__init__()
         self.emotion_analyzer = EmotionAnalyzer()
@@ -54,8 +57,8 @@ class EmotionApp(QWidget):
         screen = QApplication.primaryScreen()
         screen_size = screen.size()
         width, height = screen_size.width(), screen_size.height()
-        window_width = width * 0.8
-        window_height = height * 0.8
+        window_width = width * self.WINDOW_WIDTH_RATIO
+        window_height = height * self.WINDOW_HEIGHT_RATIO
         self.resize(window_width, window_height)
         self.move((width - window_width) // 2, (height - window_height) // 2)
         self.setFixedSize(window_width, window_height)
@@ -165,12 +168,12 @@ class EmotionApp(QWidget):
             cv2.putText(frame, f'Gender: {gender}', (x, y + h + 60), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 2)
 
             # Add emoji
-            if emotion in self.emotion_analyzer.emotion_emoji_map:
-                emoji_path = self.emotion_analyzer.emotion_emoji_map[emotion]
+            if emotion in self.emotion_analyzer.EMOTION_EMOJI_MAP:
+                emoji_path = self.emotion_analyzer.EMOTION_EMOJI_MAP[emotion]
                 frame = self.emotion_analyzer.add_emoji_to_frame(frame, emoji_path, (x, y - 50))
 
         return frame
-    
+
     def update_button_states(self, *, accept_button, discard_button, capture_button):
         self.accept_button.setEnabled(accept_button)
         self.discard_button.setEnabled(discard_button)
