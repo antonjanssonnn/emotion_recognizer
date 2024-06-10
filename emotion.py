@@ -1,11 +1,12 @@
+import os
+os.environ['TF_ENABLE_ONEDNN_OPTS'] = '0'
 import cv2
 from deepface import DeepFace
 import sqlite3
 import datetime
 import os
-from PIL import Image, ImageFont, ImageDraw
+from PIL import Image
 import numpy as np
-import emoji
 
 # Setup database connection
 conn = sqlite3.connect('emotions.db')
@@ -54,7 +55,14 @@ while True:
     ret, frame = cap.read()
 
     # Display the frame
-    cv2.imshow('Press Space to Capture', frame)
+    cv2.imshow('Emotion Recognizer', frame)
+
+    # Add instruction text
+    instruction_text = "Press Space to Capture"
+    cv2.putText(frame, instruction_text, (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2, cv2.LINE_AA)
+
+    # Display the frame
+    cv2.imshow('Video Feed', frame)
 
     # Wait for space bar to capture image
     if cv2.waitKey(1) & 0xFF == ord(' '):
