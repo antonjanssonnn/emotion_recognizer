@@ -46,6 +46,54 @@ class DatabaseManager:
         except sqlite3.Error as e:
             print(f"Error inserting data into database: {e}")
 
+    def get_most_common_emotion(self, start_time, end_time):
+        """Retrieves the most common emotion within a specified time range."""
+        query = '''
+            SELECT emotion, COUNT(emotion) as count
+            FROM emotions
+            WHERE timestamp BETWEEN ? AND ?
+            GROUP BY emotion
+            ORDER BY count DESC
+            LIMIT 1
+        '''
+        self.cursor.execute(query, (start_time, end_time))
+        result = self.cursor.fetchone()
+        return result[0] if result else None
+
+    def get_emotion_trends(self):
+        """Retrieves the dominant emotions from morning to evening."""
+        time_ranges = [
+            ("Morning", "06:00:00", "12:00:00"),
+            ("Afternoon", "12:00:01", "18:00:00"),
+            ("Evening", "18:00:01", "23:59:59")
+        ]
+        trends = {}
+        for period, start, end in time_ranges:
+            query = f'''
+                SELECT emotion, COUNT(emotion) as count
+                FROM emotions
+                WHERE time(timestamp) BETWEEN ? AND ?
+                GROUP BY emotion
+                ORDER BY count DESC
+                LIMIT 1
+            '''
+            self.cursor.execute(query, (start, end))
+            result = self.cursor.fetchone()
+            trends[period] = result[0] if result else None
+        return trends
+
+    def get_happy_emotion_counts(self, date):
+        """Retrieves the count of 'happy' emotions for each hour of the specified date."""
+        query = '''
+            SELECT strftime('%H', timestamp) as hour, COUNT(*) as count
+            FROM emotions
+            WHERE emotion = 'happy' AND date(timestamp) = ?
+            GROUP BY hour
+            ORDER BY hour
+        '''
+        self.cursor.execute(query, (date,))
+        return self.cursor.fetchall()
+
     def close(self):
         """Closes the database connection."""
         self.conn.close()

@@ -1,11 +1,11 @@
-import sys
-from PySide6.QtWidgets import QApplication, QLabel, QWidget, QVBoxLayout, QPushButton
+from PySide6.QtWidgets import QApplication, QLabel, QWidget, QVBoxLayout, QPushButton, QMessageBox, QDialog
 from PySide6.QtGui import QKeyEvent
 from PySide6.QtCore import QTimer, Qt
 import cv2
 import os
 import datetime
 from src import EmotionAnalyzer, FrameProcessor, DatabaseManager
+import matplotlib.pyplot as plt
 
 
 class EmotionApp(QWidget):
@@ -40,9 +40,11 @@ class EmotionApp(QWidget):
         self.capture_button = QPushButton("Capture", self)
         self.accept_button = QPushButton("Accept", self)
         self.discard_button = QPushButton("Discard", self)
+        self.trend_button = QPushButton("Show Trends", self)
         layout.addWidget(self.capture_button)
         layout.addWidget(self.accept_button)
         layout.addWidget(self.discard_button)
+        layout.addWidget(self.trend_button)
 
         self.accept_button.setEnabled(False)
         self.discard_button.setEnabled(False)
@@ -50,6 +52,7 @@ class EmotionApp(QWidget):
         self.capture_button.clicked.connect(self.capture_image)
         self.accept_button.clicked.connect(self.accept_image)
         self.discard_button.clicked.connect(self.discard_image)
+        self.trend_button.clicked.connect(self.show_trends_dialog)
 
         self.timer = QTimer(self)
         self.timer.timeout.connect(self.update_frame)
@@ -136,6 +139,60 @@ class EmotionApp(QWidget):
             gender = result[0]['dominant_gender']
             self.db_manager.add_emotion(emotion, age, gender)
         print("Data added to database")
+
+    def show_trends_dialog(self):
+        dialog = QDialog(self)
+        dialog.setWindowTitle("Select Trend to View")
+        dialog_layout = QVBoxLayout()
+        
+        happy_button = QPushButton("Happy Emotions Over the Day", dialog)
+        common_emotion_button = QPushButton("Most Common Emotion of the Day/Week", dialog)
+        
+        happy_button.clicked.connect(self.show_happy_trend)
+        common_emotion_button.clicked.connect(self.show_common_emotion_trend)
+        
+        dialog_layout.addWidget(happy_button)
+        dialog_layout.addWidget(common_emotion_button)
+        
+        dialog.setLayout(dialog_layout)
+        dialog.exec()
+
+    def show_happy_trend(self):
+        today = datetime.datetime.now().date()
+        happy_counts = self.db_manager.get_happy_emotion_counts(today)
+
+        hours = [int(hour) for hour, count in happy_counts]
+        counts = [count for hour, count in happy_counts]
+
+        plt.figure(figsize=(10, 5))
+        plt.plot(hours, counts, marker='o', linestyle='-', color='b')
+        plt.title('Happy Emotions Over the Day')
+        plt.xlabel('Hour of the Day')
+        plt.ylabel('Count of Happy Emotions')
+        plt.xticks(range(0, 24))
+        plt.grid(True)
+        plt.show()
+
+    def show_common_emotion_trend(self):
+        today = datetime.datetime.now().date()
+        start_of_today = datetime.datetime.combine(today, datetime.time.min)
+        end_of_today = datetime.datetime.combine(today, datetime.time.max)
+
+        most_common_emotion_today = self.db_manager.get_most_common_emotion(start_of_today, end_of_today)
+
+        start_of_week = start_of_today - datetime.timedelta(days=today.weekday())
+        end_of_week = start_of_today + datetime.timedelta(days=(6 - today.weekday()))
+        most_common_emotion_week = self.db_manager.get_most_common_emotion(start_of_week, end_of_week)
+
+        emotion_trends = self.db_manager.get_emotion_trends()
+
+        message = f"Most Common Emotion Today: {most_common_emotion_today}\n"
+        message += f"Most Common Emotion This Week: {most_common_emotion_week}\n\n"
+        message += "Emotion Trends:\n"
+        for period, emotion in emotion_trends.items():
+            message += f"{period}: {emotion}\n"
+
+        QMessageBox.information(self, "Emotion Trends", message)
 
     def update_button_states(self, *, accept_button, discard_button, capture_button):
         self.accept_button.setEnabled(accept_button)
