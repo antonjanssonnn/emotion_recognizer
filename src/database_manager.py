@@ -94,6 +94,20 @@ class DatabaseManager:
         self.cursor.execute(query, (date,))
         return self.cursor.fetchall()
 
+    def get_happy_emotion_counts_for_week(self, start_date, end_date):
+        """Retrieves the count of 'happy' emotions for each hour of each day within the specified date range."""
+        query = '''
+            SELECT date(timestamp) as date, strftime('%H', timestamp) as hour, COUNT(*) as count
+            FROM emotions
+            WHERE emotion = 'happy'
+            AND date(timestamp) BETWEEN ? AND ?
+            AND strftime('%H', timestamp) BETWEEN '06' AND '18'
+            GROUP BY date, hour
+            ORDER BY date, hour
+        '''
+        self.cursor.execute(query, (start_date, end_date))
+        return self.cursor.fetchall()
+
     def close(self):
         """Closes the database connection."""
         self.conn.close()

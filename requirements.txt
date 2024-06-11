@@ -2,3 +2,4 @@ opencv-python
 deepface
 tf_keras
 PySide6
+matplotlib
