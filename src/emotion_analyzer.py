@@ -1,10 +1,11 @@
+import logging
+
 import cv2
 from deepface import DeepFace
-import logging
 
 
 class EmotionAnalyzer:
-    CASCADE_PATH = cv2.data.haarcascades + 'haarcascade_frontalface_default.xml'
+    CASCADE_PATH = cv2.data.haarcascades + "haarcascade_frontalface_default.xml"
     SCALE_FACTOR = 1.1
     MIN_NEIGHBORS = 8
     MIN_SIZE = (30, 30)
@@ -27,13 +28,15 @@ class EmotionAnalyzer:
             gray_frame,
             scaleFactor=self.SCALE_FACTOR,
             minNeighbors=self.MIN_NEIGHBORS,
-            minSize=self.MIN_SIZE
+            minSize=self.MIN_SIZE,
         )
 
         results = []
-        for (x, y, w, h) in faces:
-            face_roi = frame[y:y+h, x:x+w]
-            result = DeepFace.analyze(face_roi, actions=['emotion', 'age', 'gender'], enforce_detection=False)
-            result[0]['region'] = {'x': x, 'y': y, 'w': w, 'h': h}
+        for x, y, w, h in faces:
+            face_roi = frame[y : y + h, x : x + w]
+            result = DeepFace.analyze(
+                face_roi, actions=["emotion", "age", "gender"], enforce_detection=False
+            )
+            result[0]["region"] = {"x": x, "y": y, "w": w, "h": h}
             results.append(result)
         return results
