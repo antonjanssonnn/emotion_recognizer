@@ -1,6 +1,5 @@
 import sqlite3
 
-
 class DatabaseManager:
     DATABASE_PATH = 'emotions.db'
 
@@ -82,28 +81,24 @@ class DatabaseManager:
             trends[period] = result[0] if result else None
         return trends
 
-    def get_happy_emotion_counts(self, date):
-        """Retrieves the count of 'happy' emotions for each hour of the specified date."""
+    def get_happy_emotion_counts(self, start_time, end_time):
+        """Retrieves counts of happy emotions within a specified time range."""
         query = '''
-            SELECT strftime('%H', timestamp) as hour, COUNT(*) as count
+            SELECT datetime(timestamp), COUNT(emotion) as count
             FROM emotions
-            WHERE emotion = 'happy' AND date(timestamp) = ?
-            GROUP BY hour
-            ORDER BY hour
+            WHERE emotion = 'happy' AND timestamp BETWEEN ? AND ?
+            GROUP BY strftime('%Y-%m-%d %H', timestamp)
         '''
-        self.cursor.execute(query, (date,))
+        self.cursor.execute(query, (start_time, end_time))
         return self.cursor.fetchall()
 
     def get_happy_emotion_counts_for_week(self, start_date, end_date):
-        """Retrieves the count of 'happy' emotions for each hour of each day within the specified date range."""
+        """Retrieves counts of happy emotions within the workweek."""
         query = '''
-            SELECT date(timestamp) as date, strftime('%H', timestamp) as hour, COUNT(*) as count
+            SELECT date(timestamp), strftime('%H', timestamp) as hour, COUNT(emotion) as count
             FROM emotions
-            WHERE emotion = 'happy'
-            AND date(timestamp) BETWEEN ? AND ?
-            AND strftime('%H', timestamp) BETWEEN '06' AND '18'
-            GROUP BY date, hour
-            ORDER BY date, hour
+            WHERE emotion = 'happy' AND date(timestamp) BETWEEN ? AND ?
+            GROUP BY date(timestamp), hour
         '''
         self.cursor.execute(query, (start_date, end_date))
         return self.cursor.fetchall()
