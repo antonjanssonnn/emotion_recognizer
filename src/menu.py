@@ -7,6 +7,8 @@ import datetime
 from src import EmotionAnalyzer, FrameProcessor, DatabaseManager
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
+import matplotlib.dates as mdates
+
 
 class EmotionApp(QWidget):
     WINDOW_WIDTH_RATIO = 0.8
@@ -146,38 +148,220 @@ class EmotionApp(QWidget):
         dialog_layout = QVBoxLayout(self.trends_window)
 
         self.tabs = QTabWidget(self.trends_window)
-        self.figure = plt.figure()
-        self.canvas = FigureCanvas(self.figure)
+        self.happy_figure = plt.figure()
+        self.happy_canvas = FigureCanvas(self.happy_figure)
 
+        # Happy Tab and Buttons
         happy_tab = QWidget()
         happy_layout = QVBoxLayout()
-        button_layout = QHBoxLayout()
+        happy_button_layout = QHBoxLayout()
 
-        day_button = QPushButton("Day")
-        week_button = QPushButton("Week")
-        month_button = QPushButton("Month")
-        year_button = QPushButton("Year")
+        happy_day_button = QPushButton("Day")
+        happy_week_button = QPushButton("Week")
+        happy_month_button = QPushButton("Month")
+        happy_year_button = QPushButton("Year")
 
-        day_button.clicked.connect(self.show_happy_trend_day)
-        week_button.clicked.connect(self.show_happy_trend_week)
-        month_button.clicked.connect(self.show_happy_trend_month)
-        year_button.clicked.connect(self.show_happy_trend_year)
+        happy_day_button.clicked.connect(self.show_happy_trend_day)
+        happy_week_button.clicked.connect(self.show_happy_trend_week)
+        happy_month_button.clicked.connect(self.show_happy_trend_month)
+        happy_year_button.clicked.connect(self.show_happy_trend_year)
 
-        button_layout.addWidget(day_button)
-        button_layout.addWidget(week_button)
-        button_layout.addWidget(month_button)
-        button_layout.addWidget(year_button)
+        happy_button_layout.addWidget(happy_day_button)
+        happy_button_layout.addWidget(happy_week_button)
+        happy_button_layout.addWidget(happy_month_button)
+        happy_button_layout.addWidget(happy_year_button)
 
-        happy_layout.addLayout(button_layout)
-        happy_layout.addWidget(self.canvas)
+        happy_layout.addLayout(happy_button_layout)
+        happy_layout.addWidget(self.happy_canvas)
         happy_tab.setLayout(happy_layout)
 
+        # Emotion Tabs and Buttons
+        self.emotion_figure = plt.figure()
+        self.emotion_canvas = FigureCanvas(self.emotion_figure)
+        emotion_tab = QWidget()
+        emotion_layout = QVBoxLayout()
+        emotion_button_layout = QHBoxLayout()
+        
+        emotion_day_button = QPushButton("Day")
+        emotion_week_button = QPushButton("Week")
+        emotion_month_button = QPushButton("Month")
+        emotion_year_button = QPushButton("Year")
+
+        emotion_day_button.clicked.connect(self.show_emotion_trend_day)
+        emotion_week_button.clicked.connect(self.show_emotion_trend_week)
+        emotion_month_button.clicked.connect(self.show_emotion_trend_month)
+        emotion_year_button.clicked.connect(self.show_emotion_trend_year)
+
+        emotion_button_layout.addWidget(emotion_day_button)
+        emotion_button_layout.addWidget(emotion_week_button)
+        emotion_button_layout.addWidget(emotion_month_button)
+        emotion_button_layout.addWidget(emotion_year_button)
+
+        emotion_layout.addLayout(emotion_button_layout)
+        emotion_layout.addWidget(self.emotion_canvas)  # Add the canvas to the emotion tab layout
+        emotion_tab.setLayout(emotion_layout)
+
         self.tabs.addTab(happy_tab, "Happy Emotions Count")
+        self.tabs.addTab(emotion_tab, "All Emotion Count")
 
         dialog_layout.addWidget(self.tabs)
 
         self.trends_window.setLayout(dialog_layout)
         self.trends_window.exec()
+
+    def show_emotion_trend_day(self):
+        today = datetime.datetime.now().date()
+        start_time = datetime.datetime.combine(today, datetime.time(6, 0))
+        end_time = datetime.datetime.combine(today, datetime.time(18, 0))
+
+        # Get emotion counts for the day
+        emotion_counts = self.db_manager.get_emotion_counts(start_time, end_time)
+
+        # Initialize a dictionary to hold the counts for each emotion and hour
+        hours_in_day = 13  # 06:00 to 18:00
+        emotions = set([count[1] for count in emotion_counts])  # Extract unique emotions
+        emotion_data = {emotion: [0] * hours_in_day for emotion in emotions}
+
+        # Fill the dictionary with the counts
+        for timestamp_str, emotion, count in emotion_counts:
+            timestamp = datetime.datetime.strptime(timestamp_str, '%Y-%m-%d %H:%M:%S')
+            if 6 <= timestamp.hour <= 18:
+                hour_index = timestamp.hour - 6  # Shift to 0-indexed hour starting at 6
+                emotion_data[emotion][hour_index] += count
+
+        # Prepare time labels for the x-axis
+        times = [start_time + datetime.timedelta(hours=i) for i in range(hours_in_day)]
+
+        # Plot the data
+        self.emotion_figure.clear()
+        ax = self.emotion_figure.add_subplot(111)
+        for emotion, counts in emotion_data.items():
+            ax.plot(times, counts, marker='o', linestyle='-', label=emotion)
+
+        ax.set_title('Emotions Over the Day')
+        ax.set_xlabel('Hour of the Day')
+        ax.set_ylabel('Count of Emotions')
+        ax.xaxis.set_major_formatter(mdates.DateFormatter('%H:%M'))
+        ax.xaxis.set_major_locator(mdates.HourLocator(interval=1))
+        ax.legend()
+        ax.grid(True)
+        self.emotion_canvas.draw()
+
+    def show_emotion_trend_week(self):
+        today = datetime.datetime.now().date()
+        start_of_week = today - datetime.timedelta(days=today.weekday())  # Monday of the current week
+        start_time = datetime.datetime.combine(start_of_week, datetime.time(6, 0))
+        end_time = datetime.datetime.combine(start_of_week + datetime.timedelta(days=4), datetime.time(18, 0))
+
+        # Get emotion counts for the entire week
+        emotion_counts = self.db_manager.get_emotion_counts(start_time, end_time)
+
+        # Initialize a dictionary to hold the counts for each emotion and hour
+        hours_in_week = 5 * 13  # 5 days, 13 hours each (06:00 to 18:00)
+        emotions = set([count[1] for count in emotion_counts])  # Extract unique emotions
+        emotion_data = {emotion: [0] * hours_in_week for emotion in emotions}
+
+        # Fill the dictionary with the counts
+        for timestamp_str, emotion, count in emotion_counts:
+            timestamp = datetime.datetime.strptime(timestamp_str, '%Y-%m-%d %H:%M:%S')
+            if 6 <= timestamp.hour <= 18:
+                day_index = (timestamp.date() - start_of_week).days
+                hour_index = timestamp.hour - 6  # Shift to 0-indexed hour starting at 6
+                index = day_index * 13 + hour_index
+                emotion_data[emotion][index] += count
+
+        # Prepare time labels for the x-axis
+        times = [start_time + datetime.timedelta(hours=i) for i in range(hours_in_week)]
+
+        # Plot the data
+        self.emotion_figure.clear()
+        ax = self.emotion_figure.add_subplot(111)
+        for emotion, counts in emotion_data.items():
+            ax.plot(times, counts, marker='o', linestyle='-', label=emotion)
+
+        ax.set_title('Emotions Over the Workweek')
+        ax.set_xlabel('Date and Hour')
+        ax.set_ylabel('Count of Emotions')
+        ax.xaxis.set_major_formatter(mdates.DateFormatter('%a %H:%M'))
+        ax.xaxis.set_major_locator(mdates.HourLocator(interval=1))
+        ax.legend()
+        ax.grid(True)
+        self.emotion_canvas.draw()
+
+    def show_emotion_trend_month(self):
+        today = datetime.datetime.now().date()
+        start_of_month = today.replace(day=1)
+        end_of_month = (start_of_month + datetime.timedelta(days=32)).replace(day=1) - datetime.timedelta(seconds=1)
+        
+        # Get emotion counts for the entire month
+        emotion_counts = self.db_manager.get_emotion_counts(start_of_month, end_of_month)
+
+        # Initialize a dictionary to hold the counts for each emotion and day
+        days_in_month = (end_of_month - start_of_month).days + 1
+        emotions = set([count[1] for count in emotion_counts])  # Extract unique emotions
+        emotion_data = {emotion: [0] * days_in_month for emotion in emotions}
+
+        # Fill the dictionary with the counts
+        for timestamp_str, emotion, count in emotion_counts:
+            timestamp = datetime.datetime.strptime(timestamp_str, '%Y-%m-%d %H:%M:%S')
+            day_index = (timestamp.date() - start_of_month).days
+            emotion_data[emotion][day_index] += count
+
+        # Prepare time labels for the x-axis
+        times = [start_of_month + datetime.timedelta(days=i) for i in range(days_in_month)]
+
+        # Plot the data
+        self.emotion_figure.clear()
+        ax = self.emotion_figure.add_subplot(111)
+        for emotion, counts in emotion_data.items():
+            ax.plot(times, counts, marker='o', linestyle='-', label=emotion)
+
+        ax.set_title('Emotions Over the Month')
+        ax.set_xlabel('Date')
+        ax.set_ylabel('Count of Emotions')
+        ax.xaxis.set_major_formatter(mdates.DateFormatter('%d %b'))
+        ax.xaxis.set_major_locator(mdates.DayLocator(interval=1))
+        ax.legend()
+        ax.grid(True)
+        self.emotion_canvas.draw()
+
+    def show_emotion_trend_year(self):
+        today = datetime.datetime.now().date()
+        start_of_year = today.replace(month=1, day=1)
+        end_of_year = today.replace(month=12, day=31)
+
+        # Get emotion counts for the entire year
+        emotion_counts = self.db_manager.get_emotion_counts(start_of_year, end_of_year)
+
+        # Initialize a dictionary to hold the counts for each emotion and month
+        months_in_year = 12
+        emotions = set([count[1] for count in emotion_counts])  # Extract unique emotions
+        emotion_data = {emotion: [0] * months_in_year for emotion in emotions}
+
+        # Fill the dictionary with the counts
+        for timestamp_str, emotion, count in emotion_counts:
+            timestamp = datetime.datetime.strptime(timestamp_str, '%Y-%m-%d %H:%M:%S')
+            month_index = timestamp.month - 1
+            emotion_data[emotion][month_index] += count
+
+        # Prepare time labels for the x-axis
+        times = [start_of_year.replace(month=i+1) for i in range(months_in_year)]
+
+        # Plot the data
+        self.emotion_figure.clear()
+        ax = self.emotion_figure.add_subplot(111)
+        for emotion, counts in emotion_data.items():
+            ax.plot(times, counts, marker='o', linestyle='-', label=emotion)
+
+        ax.set_title('Emotions Over the Year')
+        ax.set_xlabel('Month')
+        ax.set_ylabel('Count of Emotions')
+        ax.xaxis.set_major_formatter(mdates.DateFormatter('%b'))
+        ax.xaxis.set_major_locator(mdates.MonthLocator())
+        ax.legend()
+        ax.grid(True)
+        self.emotion_canvas.draw()
+
 
     def show_happy_trend_day(self):
         today = datetime.datetime.now().date()
@@ -193,15 +377,15 @@ class EmotionApp(QWidget):
             counts[timestamp.hour] += count
 
         hours = list(range(24))
-        self.figure.clear()
-        ax = self.figure.add_subplot(111)
+        self.happy_figure.clear()
+        ax = self.happy_figure.add_subplot(111)
         ax.plot(hours, counts, marker='o', linestyle='-')
         ax.set_title('Happy Emotions Over the Hours of Today')
         ax.set_xlabel('Hour of the Day')
         ax.set_ylabel('Count of Happy Emotions')
         ax.set_xticks(range(24))
         ax.grid(True)
-        self.canvas.draw()
+        self.happy_canvas.draw()
 
     def show_happy_trend_week(self):
         today = datetime.datetime.now().date()
@@ -220,8 +404,8 @@ class EmotionApp(QWidget):
                     day_index = (date - start_of_week).days
                     week_counts[day_index][hour] += count
 
-        self.figure.clear()
-        ax = self.figure.add_subplot(111)
+        self.happy_figure.clear()
+        ax = self.happy_figure.add_subplot(111)
         for day_index, day_counts in week_counts.items():
             hours = list(range(6, 19))  # Work hours 06:00 to 18:00
             counts = day_counts[6:19]
@@ -233,7 +417,7 @@ class EmotionApp(QWidget):
         ax.set_xticks(range(6, 19))
         ax.grid(True)
         ax.legend()
-        self.canvas.draw()
+        self.happy_canvas.draw()
 
     def show_happy_trend_month(self):
         today = datetime.datetime.now().date()
@@ -249,15 +433,15 @@ class EmotionApp(QWidget):
             day_counts[timestamp.day] += count
 
         days = list(range(1, end_of_month.day + 1))
-        self.figure.clear()
-        ax = self.figure.add_subplot(111)
+        self.happy_figure.clear()
+        ax = self.happy_figure.add_subplot(111)
         ax.plot(days, day_counts[1:], marker='o', linestyle='-')
         ax.set_title('Happy Emotions Over the Days of the Month')
         ax.set_xlabel('Day of the Month')
         ax.set_ylabel('Count of Happy Emotions')
         ax.set_xticks(days)
         ax.grid(True)
-        self.canvas.draw()
+        self.happy_canvas.draw()
 
     def show_happy_trend_year(self):
         today = datetime.datetime.now().date()
@@ -273,15 +457,15 @@ class EmotionApp(QWidget):
             month_counts[timestamp.month] += count
 
         months = list(range(1, 13))
-        self.figure.clear()
-        ax = self.figure.add_subplot(111)
+        self.happy_figure.clear()
+        ax = self.happy_figure.add_subplot(111)
         ax.plot(months, month_counts[1:], marker='o', linestyle='-')
         ax.set_title('Happy Emotions Over the Months of the Year')
         ax.set_xlabel('Month of the Year')
         ax.set_ylabel('Count of Happy Emotions')
         ax.set_xticks(months)
         ax.grid(True)
-        self.canvas.draw()
+        self.happy_canvas.draw()
 
     def update_button_states(self, *, accept_button, discard_button, capture_button):
         self.accept_button.setEnabled(accept_button)

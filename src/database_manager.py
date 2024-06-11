@@ -103,6 +103,18 @@ class DatabaseManager:
         self.cursor.execute(query, (start_date, end_date))
         return self.cursor.fetchall()
 
+    def get_emotion_counts(self, start_time, end_time):
+        """Retrieves counts of all emotions within a specified time range."""
+        query = '''
+            SELECT datetime(timestamp), emotion, COUNT(emotion) as count
+            FROM emotions
+            WHERE timestamp BETWEEN ? AND ?
+            GROUP BY strftime('%Y-%m-%d %H', timestamp), emotion
+            ORDER BY timestamp, emotion
+        '''
+        self.cursor.execute(query, (start_time, end_time))
+        return self.cursor.fetchall()
+    
     def close(self):
         """Closes the database connection."""
         self.conn.close()

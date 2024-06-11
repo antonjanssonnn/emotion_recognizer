@@ -75,7 +75,7 @@ class FrameProcessor:
             # Add emoji
             if emotion in self.EMOTION_EMOJI_MAP:
                 emoji_path = self.EMOTION_EMOJI_MAP[emotion]
-                frame = self.add_emoji_to_frame(frame, emoji_path, (x, y - 50))
+                frame = self.add_emoji_to_frame(frame, emoji_path, (x, y + 120))
 
         return frame
 
