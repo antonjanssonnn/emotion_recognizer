@@ -36,6 +36,8 @@ class EmotionApp(QWidget):
         self.current_results = None
         self.ensure_directory_exists(self.IMAGE_DIRECTORY)
         self.initUI()
+        self.current_happy_button = None
+        self.current_emotion_button = None
 
     def ensure_directory_exists(self, directory):
         """Ensures the specified directory exists."""
@@ -175,24 +177,26 @@ class EmotionApp(QWidget):
         # Happy Tab and Buttons
         happy_tab = QWidget()
         happy_layout = QVBoxLayout()
-        happy_button_layout = QHBoxLayout()
+        self.happy_button_layout = QHBoxLayout()
 
-        happy_day_button = QPushButton("Day")
-        happy_week_button = QPushButton("Week")
-        happy_month_button = QPushButton("Month")
-        happy_year_button = QPushButton("Year")
+        self.happy_day_button = QPushButton("Day")
+        self.happy_week_button = QPushButton("Week")
+        self.happy_month_button = QPushButton("Month")
+        self.happy_year_button = QPushButton("Year")
 
-        happy_day_button.clicked.connect(self.show_happy_trend_day)
-        happy_week_button.clicked.connect(self.show_happy_trend_week)
-        happy_month_button.clicked.connect(self.show_happy_trend_month)
-        happy_year_button.clicked.connect(self.show_happy_trend_year)
+        self.happy_day_button.clicked.connect(lambda: self.show_happy_trend_day(True))
+        self.happy_week_button.clicked.connect(lambda: self.show_happy_trend_week(True))
+        self.happy_month_button.clicked.connect(
+            lambda: self.show_happy_trend_month(True)
+        )
+        self.happy_year_button.clicked.connect(lambda: self.show_happy_trend_year(True))
 
-        happy_button_layout.addWidget(happy_day_button)
-        happy_button_layout.addWidget(happy_week_button)
-        happy_button_layout.addWidget(happy_month_button)
-        happy_button_layout.addWidget(happy_year_button)
+        self.happy_button_layout.addWidget(self.happy_day_button)
+        self.happy_button_layout.addWidget(self.happy_week_button)
+        self.happy_button_layout.addWidget(self.happy_month_button)
+        self.happy_button_layout.addWidget(self.happy_year_button)
 
-        happy_layout.addLayout(happy_button_layout)
+        happy_layout.addLayout(self.happy_button_layout)
         happy_layout.addWidget(self.happy_canvas)
         happy_tab.setLayout(happy_layout)
 
@@ -201,24 +205,32 @@ class EmotionApp(QWidget):
         self.emotion_canvas = FigureCanvas(self.emotion_figure)
         emotion_tab = QWidget()
         emotion_layout = QVBoxLayout()
-        emotion_button_layout = QHBoxLayout()
+        self.emotion_button_layout = QHBoxLayout()
 
-        emotion_day_button = QPushButton("Day")
-        emotion_week_button = QPushButton("Week")
-        emotion_month_button = QPushButton("Month")
-        emotion_year_button = QPushButton("Year")
+        self.emotion_day_button = QPushButton("Day")
+        self.emotion_week_button = QPushButton("Week")
+        self.emotion_month_button = QPushButton("Month")
+        self.emotion_year_button = QPushButton("Year")
 
-        emotion_day_button.clicked.connect(self.show_emotion_trend_day)
-        emotion_week_button.clicked.connect(self.show_emotion_trend_week)
-        emotion_month_button.clicked.connect(self.show_emotion_trend_month)
-        emotion_year_button.clicked.connect(self.show_emotion_trend_year)
+        self.emotion_day_button.clicked.connect(
+            lambda: self.show_emotion_trend_day(True)
+        )
+        self.emotion_week_button.clicked.connect(
+            lambda: self.show_emotion_trend_week(True)
+        )
+        self.emotion_month_button.clicked.connect(
+            lambda: self.show_emotion_trend_month(True)
+        )
+        self.emotion_year_button.clicked.connect(
+            lambda: self.show_emotion_trend_year(True)
+        )
 
-        emotion_button_layout.addWidget(emotion_day_button)
-        emotion_button_layout.addWidget(emotion_week_button)
-        emotion_button_layout.addWidget(emotion_month_button)
-        emotion_button_layout.addWidget(emotion_year_button)
+        self.emotion_button_layout.addWidget(self.emotion_day_button)
+        self.emotion_button_layout.addWidget(self.emotion_week_button)
+        self.emotion_button_layout.addWidget(self.emotion_month_button)
+        self.emotion_button_layout.addWidget(self.emotion_year_button)
 
-        emotion_layout.addLayout(emotion_button_layout)
+        emotion_layout.addLayout(self.emotion_button_layout)
         emotion_layout.addWidget(
             self.emotion_canvas
         )  # Add the canvas to the emotion tab layout
@@ -232,8 +244,9 @@ class EmotionApp(QWidget):
         self.trends_window.setLayout(dialog_layout)
 
         # Show the default graph (e.g., Happy Emotions Over the Day)
-        self.show_happy_trend_day()
+        self.show_happy_trend_day(True)
         self.happy_tab_viewed = True
+        self.current_happy_button = self.happy_day_button
 
         # Connect tab change to method
         self.tabs.currentChanged.connect(self.on_tab_changed)
@@ -241,14 +254,49 @@ class EmotionApp(QWidget):
         self.trends_window.exec()
 
     def on_tab_changed(self, index):
-        if index == 0 and not self.happy_tab_viewed:
-            self.show_happy_trend_day()
-            self.happy_tab_viewed = True
-        elif index == 1 and not self.emotion_tab_viewed:
-            self.show_emotion_trend_day()
-            self.emotion_tab_viewed = True
+        if index == 0:
+            if not self.happy_tab_viewed:
+                self.show_happy_trend_day(True)
+                self.happy_tab_viewed = True
+                self.current_happy_button = self.happy_day_button
+            else:
+                selected_button = self.get_selected_button(self.happy_button_layout)
+                self.current_happy_button = (
+                    selected_button if selected_button else self.happy_day_button
+                )
+                self.update_tab_styles(
+                    self.current_happy_button, self.happy_button_layout
+                )
+        elif index == 1:
+            if not self.emotion_tab_viewed:
+                self.show_emotion_trend_day(True)
+                self.emotion_tab_viewed = True
+                self.current_emotion_button = self.emotion_day_button
+            else:
+                selected_button = self.get_selected_button(self.emotion_button_layout)
+                self.current_emotion_button = (
+                    selected_button if selected_button else self.emotion_day_button
+                )
+                self.update_tab_styles(
+                    self.current_emotion_button, self.emotion_button_layout
+                )
 
-    def show_emotion_trend_day(self):
+    def get_selected_button(self, button_layout):
+        for i in range(button_layout.count()):
+            button = button_layout.itemAt(i).widget()
+            if button.styleSheet() == "background-color: blue; color: white;":
+                return button
+        return None
+
+    def update_tab_styles(self, selected_button, button_layout):
+        for i in range(button_layout.count()):
+            button = button_layout.itemAt(i).widget()
+            if button == selected_button:
+                button.setStyleSheet("background-color: blue; color: white;")
+            else:
+                button.setStyleSheet("")
+
+    def show_emotion_trend_day(self, update_styles=False):
         today = datetime.datetime.now().date()
         start_time = datetime.datetime.combine(today, datetime.time(6, 0))
         end_time = datetime.datetime.combine(today, datetime.time(18, 0))
@@ -282,8 +330,11 @@ class EmotionApp(QWidget):
             emotion_data,
             times,
         )
+        if update_styles:
+            self.update_tab_styles(self.emotion_day_button, self.emotion_button_layout)
+            self.current_emotion_button = self.emotion_day_button
 
-    def show_emotion_trend_week(self):
+    def show_emotion_trend_week(self, update_styles=False):
         today = datetime.datetime.now().date()
         start_of_week = today - datetime.timedelta(
             days=today.weekday()
@@ -324,8 +375,11 @@ class EmotionApp(QWidget):
             emotion_data,
             dates,
         )
+        if update_styles:
+            self.update_tab_styles(self.emotion_week_button, self.emotion_button_layout)
+            self.current_emotion_button = self.emotion_week_button
 
-    def show_emotion_trend_month(self):
+    def show_emotion_trend_month(self, update_styles=False):
         today = datetime.datetime.now().date()
         start_of_month = today.replace(day=1)
         end_of_month = (start_of_month + datetime.timedelta(days=32)).replace(
@@ -350,8 +404,8 @@ class EmotionApp(QWidget):
             day_index = (timestamp.date() - start_of_month).days
             emotion_data[emotion][day_index] += count
 
-        # Prepare time labels for the x-axis
-        times = [
+        # Prepare date labels for the x-axis
+        dates = [
             start_of_month + datetime.timedelta(days=i) for i in range(days_in_month)
         ]
 
@@ -363,10 +417,15 @@ class EmotionApp(QWidget):
             "Date",
             "Count of Emotions",
             emotion_data,
-            times,
+            dates,
         )
+        if update_styles:
+            self.update_tab_styles(
+                self.emotion_month_button, self.emotion_button_layout
+            )
+            self.current_emotion_button = self.emotion_month_button
 
-    def show_emotion_trend_year(self):
+    def show_emotion_trend_year(self, update_styles=False):
         today = datetime.datetime.now().date()
         start_of_year = today.replace(month=1, day=1)
         end_of_year = today.replace(month=12, day=31)
@@ -387,8 +446,8 @@ class EmotionApp(QWidget):
             month_index = timestamp.month - 1
             emotion_data[emotion][month_index] += count
 
-        # Prepare time labels for the x-axis
-        times = [start_of_year.replace(month=i + 1) for i in range(months_in_year)]
+        # Prepare date labels for the x-axis
+        dates = [start_of_year.replace(month=i + 1) for i in range(months_in_year)]
 
         # Use the helper function to plot the data
         self.plot_year_trend(
@@ -397,10 +456,13 @@ class EmotionApp(QWidget):
             "Month",
             "Count of Emotions",
             emotion_data,
-            times,
+            dates,
         )
+        if update_styles:
+            self.update_tab_styles(self.emotion_year_button, self.emotion_button_layout)
+            self.current_emotion_button = self.emotion_year_button
 
-    def show_happy_trend_day(self):
+    def show_happy_trend_day(self, update_styles=False):
         today = datetime.datetime.now().date()
         start_of_today = datetime.datetime.combine(today, datetime.time(6, 0))
         end_of_today = datetime.datetime.combine(today, datetime.time(18, 0))
@@ -432,8 +494,11 @@ class EmotionApp(QWidget):
             happy_data,
             times,
         )
+        if update_styles:
+            self.update_tab_styles(self.happy_day_button, self.happy_button_layout)
+            self.current_emotion_button = self.happy_day_button
 
-    def show_happy_trend_week(self):
+    def show_happy_trend_week(self, update_styles=False):
         today = datetime.datetime.now().date()
         start_of_week = today - datetime.timedelta(
             days=today.weekday()
@@ -473,8 +538,11 @@ class EmotionApp(QWidget):
             happy_data,
             dates,
         )
+        if update_styles:
+            self.update_tab_styles(self.happy_week_button, self.happy_button_layout)
+            self.current_emotion_button = self.happy_week_button
 
-    def show_happy_trend_month(self):
+    def show_happy_trend_month(self, update_styles=False):
         today = datetime.datetime.now().date()
         start_of_month = today.replace(day=1)
         end_of_month = (start_of_month + datetime.timedelta(days=32)).replace(
@@ -511,8 +579,11 @@ class EmotionApp(QWidget):
             happy_data,
             dates,
         )
+        if update_styles:
+            self.update_tab_styles(self.happy_month_button, self.happy_button_layout)
+            self.current_emotion_button = self.happy_month_button
 
-    def show_happy_trend_year(self):
+    def show_happy_trend_year(self, update_styles=False):
         today = datetime.datetime.now().date()
         start_of_year = today.replace(month=1, day=1)
         end_of_year = today.replace(month=12, day=31)
@@ -544,6 +615,9 @@ class EmotionApp(QWidget):
             happy_data,
             dates,
         )
+        if update_styles:
+            self.update_tab_styles(self.happy_year_button, self.happy_button_layout)
+            self.current_emotion_button = self.happy_year_button
 
     def plot_day_trend(self, figure, title, xlabel, ylabel, data, times):
         figure.clear()
