@@ -1,7 +1,6 @@
 import datetime
 import os
 
-import cv2
 import matplotlib.dates as mdates
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
@@ -24,7 +23,6 @@ from src import DatabaseManager, EmotionAnalyzer, FrameProcessor
 class EmotionApp(QWidget):
     WINDOW_WIDTH_RATIO = 0.8
     WINDOW_HEIGHT_RATIO = 0.8
-    IMAGE_DIRECTORY = "captured_images"
 
     def __init__(self):
         super().__init__()
@@ -133,7 +131,6 @@ class EmotionApp(QWidget):
 
     def accept_image(self):
         if self.current_results:
-            self.save_image(self.current_frame)
             self.add_to_database(self.current_results)
         self.update_button_states(
             accept_button=False, discard_button=False, capture_button=True
@@ -146,12 +143,6 @@ class EmotionApp(QWidget):
         )
         self.live_video = True
         print("Image was discarded!")
-
-    def save_image(self, frame):
-        timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-        filename = f"captured_images/{timestamp}.png"
-        cv2.imwrite(filename, frame)
-        print(f"Image saved as {filename}")
 
     def add_to_database(self, results):
         for result in results:
