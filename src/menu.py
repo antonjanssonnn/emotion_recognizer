@@ -1,5 +1,4 @@
 import datetime
-import os
 
 import matplotlib.dates as mdates
 import matplotlib.pyplot as plt
@@ -32,15 +31,9 @@ class EmotionApp(QWidget):
         self.live_video = True
         self.current_frame = None
         self.current_results = None
-        self.ensure_directory_exists(self.IMAGE_DIRECTORY)
         self.initUI()
         self.current_happy_button = None
         self.current_emotion_button = None
-
-    def ensure_directory_exists(self, directory):
-        """Ensures the specified directory exists."""
-        if not os.path.exists(directory):
-            os.makedirs(directory)
 
     def initUI(self):
         self.setWindowTitle("Emotion Recognizer")
