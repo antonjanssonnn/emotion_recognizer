@@ -16,7 +16,9 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from src import DatabaseManager, EmotionAnalyzer, FrameProcessor
+from src import DatabaseManager, FrameProcessor
+from src.emotion_analyzer import EmotionAnalyzer
+from src.face_detection import FaceDetector
 
 
 class EmotionApp(QWidget):
@@ -26,6 +28,7 @@ class EmotionApp(QWidget):
     def __init__(self):
         super().__init__()
         self.db_manager = DatabaseManager()
+        self.face_detector = FaceDetector(model_name="mtcnn")
         self.emotion_analyzer = EmotionAnalyzer()
         self.frame_processor = FrameProcessor()
         self.live_video = True
@@ -105,22 +108,63 @@ class EmotionApp(QWidget):
         self.live_video = False
         frame = self.frame_processor.capture_frame()
         if frame is not None:
-            results = self.emotion_analyzer.analyze_frame(frame)
-            if results:
-                annotated_frame = self.frame_processor.annotate_frame(frame, results)
+            # MTCNN face detection
+            self.face_detector = FaceDetector(model_name="mtcnn")
+            mtcnn_face_boxes = self.face_detector.detect_faces(frame)
+            mtcnn_results = self.process_face_boxes(frame, mtcnn_face_boxes, "MTCNN")
+
+            # HaarCascade face detection
+            self.face_detector = FaceDetector(model_name="haarcascade")
+            cascade_face_boxes = self.face_detector.detect_faces(frame)
+            cascade_results = self.process_face_boxes(
+                frame, cascade_face_boxes, "HaarCascade"
+            )
+
+            # Compare results
+            self.compare_results(mtcnn_results, cascade_results)
+
+            # Choose which results to use for the final image display and database entry
+            # Here we choose MTCNN results for example
+            self.current_results = mtcnn_results if mtcnn_results else cascade_results
+
+            # Display annotated frame
+            if self.current_results:
+                annotated_frame = self.frame_processor.annotate_frame(
+                    frame, self.current_results
+                )
                 self.display_image(annotated_frame)
                 self.current_frame = annotated_frame
-                self.current_results = results
             else:
                 self.display_image(frame)
                 self.current_frame = frame
-                self.current_results = None
 
             self.update_button_states(
                 accept_button=True, discard_button=True, capture_button=False
             )
         else:
             print("No frame captured to process.")
+
+    def process_face_boxes(self, frame, face_boxes, model_name):
+        results = []
+        for box in face_boxes:
+            x, y, w, h = box["x"], box["y"], box["w"], box["h"]
+            face_roi = frame[y : y + h, x : x + w]
+            emotion_result = self.emotion_analyzer.analyze_emotions(face_roi)
+            emotion_result[0]["region"] = box
+            emotion_result[0][
+                "model_name"
+            ] = model_name  # Adding model name for comparison
+            results.append(emotion_result)
+        return results
+
+    def compare_results(self, mtcnn_results, cascade_results):
+        print("MTCNN Results:")
+        for result in mtcnn_results:
+            print(result)
+
+        print("\nCascade Results:")
+        for result in cascade_results:
+            print(result)
 
     def accept_image(self):
         if self.current_results:

@@ -1,4 +1,5 @@
 import logging
+import time
 
 import cv2
 import numpy as np
@@ -27,6 +28,7 @@ class FrameProcessor:
         if not cap.isOpened():
             logging.error("Error: Could not open video capture device.")
             exit()
+        time.sleep(1)  # One-time delay to allow the camera to initialize
         return cap
 
     def capture_frame(self):
