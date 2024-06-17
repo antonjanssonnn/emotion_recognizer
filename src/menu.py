@@ -22,8 +22,10 @@ from src import DatabaseManager, EmotionAnalyzer, FrameProcessor
 
 
 class EmotionApp(QWidget):
-    WINDOW_WIDTH_RATIO = 0.8
-    WINDOW_HEIGHT_RATIO = 0.8
+    WINDOW_WIDTH_RATIO = 1
+    WINDOW_HEIGHT_RATIO = 1
+    CAMERA_WINDOW_WIDTH_RATIO = 0.6
+    CAMERA_WINDOW_HEIGHT_RATIO = 0.6
     IMAGE_DIRECTORY = "captured_images"
 
     def __init__(self):
@@ -49,14 +51,43 @@ class EmotionApp(QWidget):
         layout = QVBoxLayout()
         self.setLayout(layout)
 
+        # Camera Feed 
         self.image_label = QLabel(self)
-        layout.addWidget(self.image_label)
+        screen = QApplication.primaryScreen()
+        screen_size = screen.size()
+        width, height = screen_size.width(), screen_size.height()
 
-        self.capture_button = QPushButton("Capture", self)
+        
+        # # Calculate the size with 25% margins on each side
+        label_width = int(width * 0.5)  # 25% margin on each side => 50% width
+        label_height = int(height * 0.5)  # Adjust the height as needed (example here is 50% of screen height)
+
+        self.image_label.setFixedSize(label_width, label_height)
+        self.image_label.setStyleSheet('border: 20px solid green')
+
+        # Buttons
+        self.capture_button = QPushButton("", self)
+        self.capture_button.setFixedSize(100, 100)  # Adjust the size as needed
+        self.capture_button.setStyleSheet("border-radius: 50%; background-color: grey;")
+
+        vertical_layout = QVBoxLayout()
+        vertical_layout.addWidget(self.image_label, alignment=Qt.AlignCenter)
+        vertical_layout.addWidget(self.capture_button, alignment=Qt.AlignCenter)
+
+        horisontal_layout = QHBoxLayout()
+        horisontal_layout.addStretch()
+        horisontal_layout.addLayout(vertical_layout)
+        horisontal_layout.addStretch()
+        layout.addLayout(horisontal_layout)
+
+        button_layout = QHBoxLayout()  # Create a horizontal layout for centering the button
+        button_layout.addStretch()
+        button_layout.addWidget(self.capture_button)
+        layout.addLayout(button_layout)  # Add the button layout to the main layout
+        
         self.accept_button = QPushButton("Accept", self)
         self.discard_button = QPushButton("Discard", self)
         self.trend_button = QPushButton("Show Trends", self)
-        layout.addWidget(self.capture_button)
         layout.addWidget(self.accept_button)
         layout.addWidget(self.discard_button)
         layout.addWidget(self.trend_button)
@@ -72,6 +103,7 @@ class EmotionApp(QWidget):
         self.timer = QTimer(self)
         self.timer.timeout.connect(self.update_frame)
         self.timer.start(20)
+
 
     def showEvent(self, event):
         super().showEvent(event)
