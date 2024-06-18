@@ -14,6 +14,7 @@ from PySide6.QtWidgets import (
     QTabWidget,
     QVBoxLayout,
     QWidget,
+    QStackedWidget
 )
 
 from src import DatabaseManager, FrameProcessor
@@ -31,21 +32,52 @@ class EmotionApp(QWidget):
         self.face_detector = FaceDetector(model_name="mtcnn")
         self.emotion_analyzer = EmotionAnalyzer()
         self.frame_processor = FrameProcessor()
+        
+        self.firstPageWidget = QWidget()
+        self.mainPageWidget = QWidget()
+        self.stackedWidget = QStackedWidget()
+        self.stackedWidget.addWidget(self.firstPageWidget)
+        self.stackedWidget.addWidget(self.mainPageWidget)
+        layout = QVBoxLayout()
+        layout.setContentsMargins(0, 0, 0, 0)  # Remove margins
+        layout.setSpacing(0)  # Remove spacing
+        layout.addWidget(self.stackedWidget)
+        self.setLayout(layout)
         self.live_video = True
         self.current_frame = None
         self.current_results = None
-        self.initUI()
         self.current_happy_button = None
         self.current_emotion_button = None
+        self.stackedWidget.setCurrentWidget(self.firstPageWidget)
+        self.firstPage()
+        self.initUI()
+
+    def firstPage(self):
+        self.firstPageWidget.setWindowTitle("Welcome to Emotion Recognizer")
+        self.firstPageWidget.setStyleSheet('background-color: white')
+        firstpage_layout = QVBoxLayout(self.firstPageWidget)
+        self.setLayout(firstpage_layout)
+
+        welcome_label = QLabel("Welcome to Emotion Recognizer")
+        welcome_label.setStyleSheet('color: white; font-size: 24px')
+        firstpage_layout.addWidget(welcome_label, alignment=Qt.AlignCenter)
+
+        continue_button = QPushButton("Continue")
+        continue_button.setStyleSheet('font-size: 18px')
+        firstpage_layout.addWidget(continue_button, alignment=Qt.AlignCenter)
+        continue_button.clicked.connect(self.changeScreen)
+
+    def changeScreen(self):
+        self.stackedWidget.setCurrentWidget(self.mainPageWidget)
 
     def initUI(self):
-        self.setWindowTitle("Emotion Recognizer")
-        self.setStyleSheet('background-color: white')
-        layout = QVBoxLayout()
-        self.setLayout(layout)
+        self.mainPageWidget.setWindowTitle("Emotion Recognizer")
+        self.mainPageWidget.setStyleSheet('background-color: white')
+        main_layout = QVBoxLayout(self.mainPageWidget)
+        self.setLayout(main_layout)
         
-        self.setup_image_display(layout)
-        self.setup_buttons(layout)
+        self.setup_image_display(main_layout)
+        self.setup_buttons(main_layout)
         self.setup_timer()
 
     
@@ -54,7 +86,7 @@ class EmotionApp(QWidget):
         self.timer.timeout.connect(self.update_frame)
         self.timer.start(20)
 
-    def setup_buttons(self, layout):
+    def setup_buttons(self, main_layout):
         self.capture_button = QPushButton("", self)
         self.capture_button.setFixedSize(100, 100)  # Adjust the size as needed
         self.capture_button.setStyleSheet("border-radius: 50%; background-color: grey;")
@@ -69,13 +101,13 @@ class EmotionApp(QWidget):
         horisontal_layout.addStretch()
         horisontal_layout.addLayout(vertical_layout)
         horisontal_layout.addStretch()
-        layout.addLayout(horisontal_layout)
+        main_layout.addLayout(horisontal_layout)
 
         button_layout = QHBoxLayout()  # Create a horizontal layout for centering the button
         button_layout.addStretch()
         button_layout.addWidget(self.capture_button)
         button_layout.addStretch()
-        layout.addLayout(button_layout)  # Add the button layout to the main layout
+        main_layout.addLayout(button_layout)  # Add the button layout to the main layout
         
         self.accept_button = QPushButton("Accept", self)
         self.discard_button = QPushButton("Discard", self)
@@ -84,9 +116,9 @@ class EmotionApp(QWidget):
         self.accept_button.setVisible(False)
         self.discard_button.setVisible(False)
         self.trend_button.setVisible(False)
-        layout.addWidget(self.accept_button)
-        layout.addWidget(self.discard_button)
-        layout.addWidget(self.trend_button)
+        main_layout.addWidget(self.accept_button)
+        main_layout.addWidget(self.discard_button)
+        main_layout.addWidget(self.trend_button)
 
         self.accept_button.setEnabled(False)
         self.discard_button.setEnabled(False)
@@ -96,9 +128,9 @@ class EmotionApp(QWidget):
         self.discard_button.clicked.connect(self.discard_image)
         self.trend_button.clicked.connect(self.show_trends_dialog)
 
-    def setup_image_display(self, layout):
+    def setup_image_display(self, main_layout):
         self.image_label = QLabel(self)
-        layout.addWidget(self.image_label, 0, alignment=Qt.AlignCenter)
+        main_layout.addWidget(self.image_label, 0, alignment=Qt.AlignCenter)
 
         # Get the size of the application window
         window_width, window_height = self.size().width(), self.size().height()
@@ -324,7 +356,7 @@ class EmotionApp(QWidget):
         emotion_layout.addLayout(self.emotion_button_layout)
         emotion_layout.addWidget(
             self.emotion_canvas
-        )  # Add the canvas to the emotion tab layout
+        )  # Add the canvas to the emotion tab main_layout
         emotion_tab.setLayout(emotion_layout)
 
         self.tabs.addTab(happy_tab, "Happy Emotions Count")
