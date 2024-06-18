@@ -138,9 +138,17 @@ class EmotionApp(QWidget):
 
     def keyPressEvent(self, event: QKeyEvent):
         if event.key() == Qt.Key_Space:
+            self.capture_button.setVisible(False)
+            self.accept_button.setVisible(True)
+            self.discard_button.setVisible(True)
+            self.trend_button.setVisible(True)
             self.capture_image()
             print("Picture is captured!")
         elif event.key() == Qt.Key_R:
+            self.accept_button.setVisible(False)
+            self.discard_button.setVisible(False)
+            self.trend_button.setVisible(False)
+            self.capture_button.setVisible(True)
             self.live_video = True
             print("Resuming live feed...")
         elif event.key() == Qt.Key_Q:
@@ -219,6 +227,10 @@ class EmotionApp(QWidget):
         self.update_button_states(
             accept_button=False, discard_button=False, capture_button=True
         )
+        self.accept_button.setVisible(False)
+        self.discard_button.setVisible(False)
+        self.trend_button.setVisible(False)
+        self.capture_button.setVisible(True)
         self.live_video = True
 
     def discard_image(self):
@@ -226,6 +238,10 @@ class EmotionApp(QWidget):
             accept_button=False, discard_button=False, capture_button=True
         )
         self.live_video = True
+        self.accept_button.setVisible(False)
+        self.discard_button.setVisible(False)
+        self.trend_button.setVisible(False)
+        self.capture_button.setVisible(True)
         print("Image was discarded!")
 
     def add_to_database(self, results):
