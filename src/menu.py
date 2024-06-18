@@ -22,10 +22,8 @@ from src.face_detection import FaceDetector
 
 
 class EmotionApp(QWidget):
-    CAMERA_WINDOW_WIDTH_RATIO = 0.6
-    CAMERA_WINDOW_HEIGHT_RATIO = 0.6
-    WINDOW_WIDTH_RATIO = 0.8
-    WINDOW_HEIGHT_RATIO = 0.8
+    WINDOW_WIDTH_RATIO = 0.6
+    WINDOW_HEIGHT_RATIO = 0.6
 
     def __init__(self):
         super().__init__()
@@ -42,31 +40,30 @@ class EmotionApp(QWidget):
 
     def initUI(self):
         self.setWindowTitle("Emotion Recognizer")
+        self.setStyleSheet('background-color: white')
         layout = QVBoxLayout()
         self.setLayout(layout)
-
-        # Camera Feed 
-        self.image_label = QLabel(self)
-        screen = QApplication.primaryScreen()
-        screen_size = screen.size()
-        width, height = screen_size.width(), screen_size.height()
-
         
-        # # Calculate the size with 25% margins on each side
-        label_width = int(width * 0.5)  # 25% margin on each side => 50% width
-        label_height = int(height * 0.5)  # Adjust the height as needed (example here is 50% of screen height)
+        self.setup_image_display(layout)
+        self.setup_buttons(layout)
+        self.setup_timer()
 
-        self.image_label.setFixedSize(label_width, label_height)
-        self.image_label.setStyleSheet('border: 20px solid green')
+    
+    def setup_timer(self):
+        self.timer = QTimer(self)
+        self.timer.timeout.connect(self.update_frame)
+        self.timer.start(20)
 
-        # Buttons
+    def setup_buttons(self, layout):
         self.capture_button = QPushButton("", self)
         self.capture_button.setFixedSize(100, 100)  # Adjust the size as needed
         self.capture_button.setStyleSheet("border-radius: 50%; background-color: grey;")
 
         vertical_layout = QVBoxLayout()
+        vertical_layout.addStretch()
         vertical_layout.addWidget(self.image_label, alignment=Qt.AlignCenter)
         vertical_layout.addWidget(self.capture_button, alignment=Qt.AlignCenter)
+        vertical_layout.addStretch()
 
         horisontal_layout = QHBoxLayout()
         horisontal_layout.addStretch()
@@ -77,11 +74,16 @@ class EmotionApp(QWidget):
         button_layout = QHBoxLayout()  # Create a horizontal layout for centering the button
         button_layout.addStretch()
         button_layout.addWidget(self.capture_button)
+        button_layout.addStretch()
         layout.addLayout(button_layout)  # Add the button layout to the main layout
         
         self.accept_button = QPushButton("Accept", self)
         self.discard_button = QPushButton("Discard", self)
         self.trend_button = QPushButton("Show Trends", self)
+        self.capture_button.setVisible(True)
+        self.accept_button.setVisible(False)
+        self.discard_button.setVisible(False)
+        self.trend_button.setVisible(False)
         layout.addWidget(self.accept_button)
         layout.addWidget(self.discard_button)
         layout.addWidget(self.trend_button)
@@ -94,9 +96,18 @@ class EmotionApp(QWidget):
         self.discard_button.clicked.connect(self.discard_image)
         self.trend_button.clicked.connect(self.show_trends_dialog)
 
-        self.timer = QTimer(self)
-        self.timer.timeout.connect(self.update_frame)
-        self.timer.start(20)
+    def setup_image_display(self, layout):
+        self.image_label = QLabel(self)
+        layout.addWidget(self.image_label, 0, alignment=Qt.AlignCenter)
+
+        # Get the size of the application window
+        window_width, window_height = self.size().width(), self.size().height()
+        
+        # Calculate the size with 25% margins on each side
+        label_width = int(window_width)  # 50% of window width
+        label_height = int(window_height)  # 50% of window height
+        self.image_label.setStyleSheet('border: 5px solid pink')
+        self.image_label.setFixedSize(label_width, label_height)
 
 
     def showEvent(self, event):
@@ -139,6 +150,10 @@ class EmotionApp(QWidget):
     def capture_image(self):
         self.live_video = False
         frame = self.frame_processor.capture_frame()
+        self.capture_button.setVisible(False)
+        self.accept_button.setVisible(True)
+        self.discard_button.setVisible(True)
+        self.trend_button.setVisible(True)
         if frame is not None:
             # MTCNN face detection
             self.face_detector = FaceDetector(model_name="mtcnn")
