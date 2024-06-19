@@ -4,7 +4,11 @@ import matplotlib.dates as mdates
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from PySide6.QtCore import Qt, QTimer
-from PySide6.QtGui import QKeyEvent
+from PySide6.QtGui import (
+    QKeyEvent,
+    QTextCursor,
+    QTextDocument
+)
 from PySide6.QtWidgets import (
     QApplication,
     QDialog,
@@ -15,6 +19,7 @@ from PySide6.QtWidgets import (
     QTabWidget,
     QVBoxLayout,
     QWidget,
+    QTextEdit,
 )
 
 from src import DatabaseManager, EmotionTexts, FrameProcessor
@@ -62,7 +67,7 @@ class EmotionApp(QWidget):
         self.welcome_label = QLabel("Good morning amazing Human!", self)
         self.welcome_label.setStyleSheet("color: pink; font-size: 44px")
         firstpage_layout.addWidget(self.welcome_label, alignment=Qt.AlignCenter)
-        description_label = QLabel("Get a reading of your emotion, age and gender by me, Sam, an AI bot... While getting your coffee or tea. \n Have fun with it!")
+        description_label = QLabel("Get a reading of your emotion, age and gender by \n me, Sam, an AI bot... While getting your coffee or tea. \n Have fun with it!")
         description_label.setStyleSheet("color: black; font-size: 30px")
         firstpage_layout.addWidget(description_label, alignment=Qt.AlignCenter)
 
@@ -71,11 +76,60 @@ class EmotionApp(QWidget):
         self.continue_button.setStyleSheet("border-radius: 5%; background-color: pink; color: white; font-size: 18px")
         firstpage_layout.addWidget(self.continue_button, alignment=Qt.AlignCenter)
         self.continue_button.clicked.connect(self.changeScreen)
-        self.trend_button = QPushButton("View trend", self)
-        self.trend_button.setFixedSize(100, 60)
-        self.trend_button.setStyleSheet("border: 3px solid pink;border-radius: 2%; background-color: white; color: black; font-size: 18px")
-        firstpage_layout.addWidget(self.trend_button, alignment=Qt.AlignCenter)
-        self.trend_button.clicked.connect(self.show_trends_dialog)
+
+        #Trend to be launched in next version
+        #self.trend_button = QPushButton("View trend", self)
+        #self.trend_button.setFixedSize(100, 60)
+        #self.trend_button.setStyleSheet("border: 3px solid pink;border-radius: 2%; background-color: white; color: black; font-size: 18px")
+        #firstpage_layout.addWidget(self.trend_button, alignment=Qt.AlignCenter)
+        #self.trend_button.clicked.connect(self.show_trends_dialog)
+
+        #TODO ADD GDPR Popup!
+        self.gdpr_button = QPushButton("Read how we handle the information according to GDPR.", self)
+        self.gdpr_button.setStyleSheet("color: black; font-size: 20; text-decoration: underline; border: 10px solid white;")
+        firstpage_layout.addWidget(self.gdpr_button, alignment=Qt.AlignCenter)
+        self.gdpr_button.clicked.connect(self.show_gdpr_dialog)
+
+    def show_gdpr_dialog(self):
+        print("CLICKED")
+        self.gdpr_window = QDialog(self)
+        self.gdpr_window.setWindowTitle("Privacy policy")
+        self.gdpr_title = QLabel("Privacy policy", self)
+        self.gdpr_title.setStyleSheet("text-decoration: bold; font-size: 40")
+        self.gdpr_text = QTextEdit("", self)
+        
+        html_content = """
+        How we handle your personal data according to GDPR.\nConsent and Data Collection:\n
+        <ul>
+            <li>
+                You have the choice to allow photo to be taken.
+                Once the photo is taken and your mood, age and gender have been registered by AI, you can choose whether the mood should be saved or discarded.
+            </li>
+            <li>
+                Regardless of your choice, the photo will be deleted immediately after the AI assessment.
+            </li> 
+        </ul>
+        Anonymity and Data Protection:
+        <ul>
+            <li>
+                Your anonymity is protected; no personally identifiable information is collected during this process.
+            </li>
+            <li>
+                Only your mood will be saved if you choose to do so.
+            </li>
+        </ul>
+        For more information on how we handle your personal data, <a href="http://google.com" style="text-decoration: underline;">...'s full Privacy policy</a>
+        """
+        
+        self.gdpr_text.setHtml(html_content)
+        self.gdpr_text.setReadOnly(True)
+        gdpr_layout = QVBoxLayout(self.gdpr_window)
+        self.text = QLabel("GDPR", self)
+        gdpr_layout.addWidget(self.gdpr_text, 0, Qt.AlignCenter)
+        gdpr_layout.addWidget(self.text, 0, Qt.AlignCenter)
+
+        self.gdpr_window.exec()
+
 
 
     def changeScreen(self):
