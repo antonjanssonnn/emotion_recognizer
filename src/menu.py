@@ -59,14 +59,24 @@ class EmotionApp(QWidget):
         firstpage_layout = QVBoxLayout(self.firstPageWidget)
         self.setLayout(firstpage_layout)
 
-        welcome_label = QLabel("Welcome to Emotion Recognizer")
-        welcome_label.setStyleSheet("color: white; font-size: 24px")
-        firstpage_layout.addWidget(welcome_label, alignment=Qt.AlignCenter)
+        self.welcome_label = QLabel("Good morning amazing Human!", self)
+        self.welcome_label.setStyleSheet("color: pink; font-size: 44px")
+        firstpage_layout.addWidget(self.welcome_label, alignment=Qt.AlignCenter)
+        description_label = QLabel("Get a reading of your emotion, age and gender by me, Sam, an AI bot... While getting your coffee or tea. \n Have fun with it!")
+        description_label.setStyleSheet("color: black; font-size: 30px")
+        firstpage_layout.addWidget(description_label, alignment=Qt.AlignCenter)
 
-        continue_button = QPushButton("Continue")
-        continue_button.setStyleSheet("font-size: 18px")
-        firstpage_layout.addWidget(continue_button, alignment=Qt.AlignCenter)
-        continue_button.clicked.connect(self.changeScreen)
+        self.continue_button = QPushButton("Start camera", self)
+        self.continue_button.setFixedSize(130,90)
+        self.continue_button.setStyleSheet("border-radius: 5%; background-color: pink; color: white; font-size: 18px")
+        firstpage_layout.addWidget(self.continue_button, alignment=Qt.AlignCenter)
+        self.continue_button.clicked.connect(self.changeScreen)
+        self.trend_button = QPushButton("View trend", self)
+        self.trend_button.setFixedSize(100, 60)
+        self.trend_button.setStyleSheet("border: 3px solid pink;border-radius: 2%; background-color: white; color: black; font-size: 18px")
+        firstpage_layout.addWidget(self.trend_button, alignment=Qt.AlignCenter)
+        self.trend_button.clicked.connect(self.show_trends_dialog)
+
 
     def changeScreen(self):
         self.stackedWidget.setCurrentWidget(self.mainPageWidget)
