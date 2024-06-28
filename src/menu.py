@@ -67,7 +67,7 @@ class EmotionApp(QWidget):
         self.welcome_label = QLabel("Good morning amazing Human!", self)
         self.welcome_label.setStyleSheet("color: pink; font-size: 44px")
         firstpage_layout.addWidget(self.welcome_label, alignment=Qt.AlignCenter)
-        description_label = QLabel("Get a reading of your emotion, age and gender by \n me, Sam, an AI bot... While getting your coffee or tea. \n Have fun with it!")
+        description_label = QLabel("Get a reading of your emotion, age and gender by \nme, Sam, an AI bot... While getting your coffee or tea. \nHave fun with it!")
         description_label.setStyleSheet("color: black; font-size: 30px")
         firstpage_layout.addWidget(description_label, alignment=Qt.AlignCenter)
 
@@ -151,48 +151,70 @@ class EmotionApp(QWidget):
         self.timer.start(20)
 
     def setup_buttons(self, main_layout):
+        
+        # Capture Button
         self.capture_button = QPushButton("", self)
         self.capture_button.setFixedSize(100, 100)  # Adjust the size as needed
         self.capture_button.setStyleSheet("border-radius: 50%; background-color: grey;")
 
+        # Vertical Layout
         vertical_layout = QVBoxLayout()
         vertical_layout.addStretch()
         vertical_layout.addWidget(self.image_label, alignment=Qt.AlignCenter)
         vertical_layout.addWidget(self.capture_button, alignment=Qt.AlignCenter)
         vertical_layout.addStretch()
-
-        horisontal_layout = QHBoxLayout()
-        horisontal_layout.addStretch()
-        horisontal_layout.addLayout(vertical_layout)
-        horisontal_layout.addStretch()
-        main_layout.addLayout(horisontal_layout)
-
-        button_layout = (
-            QHBoxLayout()
-        )  # Create a horizontal layout for centering the button
-        button_layout.addStretch()
-        button_layout.addWidget(self.capture_button)
-        button_layout.addStretch()
-        main_layout.addLayout(button_layout)  # Add the button layout to the main layout
-
+        main_layout.addLayout(vertical_layout)
+        
+        # Buttons
+        self.retake_button = QPushButton("Retake", self)
+        self.retake_button.setFixedSize(100, 100)
+        self.retake_button.setStyleSheet("border: 3px solid pink; border-radius: 5%;")
         self.accept_button = QPushButton("Accept", self)
+        self.accept_button.setFixedSize(100, 100)
+        self.accept_button.setStyleSheet("border: 3px solid pink; border-radius: 5%;")
         self.discard_button = QPushButton("Discard", self)
-        self.trend_button = QPushButton("Show Trends", self)
+        self.discard_button.setFixedSize(100, 100)
+        self.discard_button.setStyleSheet("border: 3px solid pink; border-radius: 5%;")
+        #self.trend_button = QPushButton("Show Trends", self)        
         self.capture_button.setVisible(True)
         self.accept_button.setVisible(False)
         self.discard_button.setVisible(False)
-        self.trend_button.setVisible(False)
-        main_layout.addWidget(self.accept_button)
-        main_layout.addWidget(self.discard_button)
-        main_layout.addWidget(self.trend_button)
+        self.retake_button.setVisible(False)
+        #self.trend_button.setVisible(False)
 
-        self.accept_button.setEnabled(False)
-        self.discard_button.setEnabled(False)
+        # Horisontal Layout - Handling the horisontal position! Focus on Accept and Discard button.
+        horisontal_layout = QHBoxLayout()
+        horisontal_layout.addStretch()
+        horisontal_layout.addWidget(self.accept_button, alignment=Qt.AlignCenter)
+        horisontal_layout.addWidget(self.discard_button, alignment=Qt.AlignCenter)
+        horisontal_layout.addWidget(self.retake_button, alignment=Qt.AlignCenter)
+        horisontal_layout.addStretch()
+        main_layout.addLayout(horisontal_layout)
+
+        # #main_layout.addWidget(self.trend_button)
+        # self.accept_button.setEnabled(False)
+        # self.discard_button.setEnabled(False)
 
         self.capture_button.clicked.connect(self.capture_image)
         self.accept_button.clicked.connect(self.accept_image)
         self.discard_button.clicked.connect(self.discard_image)
-        self.trend_button.clicked.connect(self.show_trends_dialog)
+        self.retake_button.clicked.connect(self.retake_image)
+        #self.trend_button.clicked.connect(self.show_trends_dialog)
+
+
+    def retake_image(self):
+        self.update_button_states(
+            accept_button=False, discard_button=False, capture_button=True
+        )
+        self.live_video = True
+        self.accept_button.setVisible(False)
+        self.discard_button.setVisible(False)
+        #self.trend_button.setVisible(False)
+        self.capture_button.setVisible(True)
+        self.retake_button.setVisible(False)
+        # ADD POPUP THAT SHOWS FOR 5 seconds
+        self.stackedWidget.setCurrentWidget(self.mainPageWidget)
+        print("Image was discarded!")
 
     def setup_image_display(self, main_layout):
         self.image_label = QLabel(self)
@@ -238,13 +260,13 @@ class EmotionApp(QWidget):
             self.capture_button.setVisible(False)
             self.accept_button.setVisible(True)
             self.discard_button.setVisible(True)
-            self.trend_button.setVisible(True)
+            #self.trend_button.setVisible(True)
             self.capture_image()
             print("Picture is captured!")
         elif event.key() == Qt.Key_R:
             self.accept_button.setVisible(False)
             self.discard_button.setVisible(False)
-            self.trend_button.setVisible(False)
+            #self.trend_button.setVisible(False)
             self.capture_button.setVisible(True)
             self.live_video = True
             print("Resuming live feed...")
@@ -258,7 +280,8 @@ class EmotionApp(QWidget):
         self.capture_button.setVisible(False)
         self.accept_button.setVisible(True)
         self.discard_button.setVisible(True)
-        self.trend_button.setVisible(True)
+        self.retake_button.setVisible(True)
+        #self.trend_button.setVisible(True)
         if frame is not None:
             # MTCNN face detection
             self.face_detector = FaceDetector(model_name="mtcnn")
@@ -322,13 +345,57 @@ class EmotionApp(QWidget):
         if self.current_results:
             self.add_to_database(self.current_results)
         self.update_button_states(
-            accept_button=False, discard_button=False, capture_button=True
+            accept_button=False, discard_button=False, capture_button=False
         )
         self.accept_button.setVisible(False)
         self.discard_button.setVisible(False)
         self.trend_button.setVisible(False)
-        self.capture_button.setVisible(True)
-        self.live_video = True
+        self.capture_button.setVisible(False)
+        self.live_video = False
+        # ADD POPUP THAT SHOWS FOR 5 seconds
+        self.show_accept_image_popup()
+        self.stackedWidget.setCurrentWidget(self.firstPageWidget)
+
+    
+    def show_accept_image_popup(self):
+        print("CLICKED")
+        self.popup_window = QDialog(self)
+        self.popup_window.setWindowTitle("Privacy policy")
+        self.popup_title = QLabel("Privacy policy", self)
+        self.popup_title.setStyleSheet("text-decoration: bold; font-size: 40")
+        self.popup_text = QTextEdit("", self)
+        
+        html_content = """
+        How we handle your personal data according to GDPR.\nConsent and Data Collection:\n
+        <ul>
+            <li>
+                You have the choice to allow photo to be taken.
+                Once the photo is taken and your mood, age and gender have been registered by AI, you can choose whether the mood should be saved or discarded.
+            </li>
+            <li>
+                Regardless of your choice, the photo will be deleted immediately after the AI assessment.
+            </li> 
+        </ul>
+        Anonymity and Data Protection:
+        <ul>
+            <li>
+                Your anonymity is protected; no personally identifiable information is collected during this process.
+            </li>
+            <li>
+                Only your mood will be saved if you choose to do so.
+            </li>
+        </ul>
+        For more information on how we handle your personal data, <a href="http://google.com" style="text-decoration: underline;">...'s full Privacy policy</a>
+        """
+        
+        self.popup_text.setHtml(html_content)
+        self.popup_text.setReadOnly(True)
+        popup_layout = QVBoxLayout(self.popup_window)
+        self.text = QLabel("GDPR", self)
+        popup_layout.addWidget(self.popup_text, 0, Qt.AlignCenter)
+        popup_layout.addWidget(self.text, 0, Qt.AlignCenter)
+
+        self.popup_window.exec()
 
     def discard_image(self):
         self.update_button_states(
@@ -337,8 +404,10 @@ class EmotionApp(QWidget):
         self.live_video = True
         self.accept_button.setVisible(False)
         self.discard_button.setVisible(False)
-        self.trend_button.setVisible(False)
+        #self.trend_button.setVisible(False)
         self.capture_button.setVisible(True)
+        # ADD POPUP THAT SHOWS FOR 5 seconds
+        self.stackedWidget.setCurrentWidget(self.firstPageWidget)
         print("Image was discarded!")
 
     def add_to_database(self, results):
