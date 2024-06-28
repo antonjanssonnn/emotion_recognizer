@@ -42,6 +42,65 @@ class FrameProcessor:
             return None
         return frame
 
+    def blur_edges(self, frame, blur_color=(255, 233, 236)):
+        """Blurs the edges of the frame, keeping the central face-shaped region clear with a specific color blur."""
+        h, w = frame.shape[:2]
+        center_x, center_y = w // 2, h // 2
+        region_w, region_h = int(w * 0.4), int(h * 0.85)
+
+        # Create an elliptical mask for the face shape
+        mask = np.zeros((h, w), dtype=np.uint8)
+        cv2.ellipse(
+            mask,
+            (center_x, center_y),
+            (region_w // 2, region_h // 2),
+            0,
+            0,
+            360,
+            255,
+            -1,
+        )
+
+        # Blur the frame
+        blurred_frame = cv2.GaussianBlur(frame, (99, 99), 0)
+
+        # Change the color of the blurred area
+        colored_blur = np.full_like(blurred_frame, blur_color)
+        colored_blur = cv2.bitwise_and(colored_blur, colored_blur, mask=255 - mask)
+        blurred_frame = cv2.bitwise_and(blurred_frame, blurred_frame, mask=255 - mask)
+        blurred_color_frame = cv2.addWeighted(colored_blur, 0.5, blurred_frame, 0.5, 0)
+
+        # Combine the original frame with the blurred, colored frame
+        clear_region = cv2.bitwise_and(frame, frame, mask=mask)
+        return cv2.add(clear_region, blurred_color_frame)
+
+    def create_face_mask(self, frame):
+        """Creates a mask for the face-shaped region to exclude blurred areas from detection."""
+        h, w = frame.shape[:2]
+        center_x, center_y = w // 2, h // 2
+        region_w, region_h = int(w * 0.4), int(h * 0.7)  # Should match the blur area
+        mask = np.zeros((h, w), dtype=np.uint8)
+        cv2.ellipse(
+            mask,
+            (center_x, center_y),
+            (region_w // 2, region_h // 2),
+            0,
+            0,
+            360,
+            255,
+            -1,
+        )
+        return mask
+
+    def get_central_region(self, frame):
+        """Returns the central region of the frame."""
+        h, w = frame.shape[:2]
+        center_x, center_y = w // 2, h // 2
+        region_w, region_h = int(w * 0.3), int(h * 0.6)
+        left = center_x - region_w // 2
+        top = center_y - region_h // 2
+        return frame[top : top + region_h, left : left + region_w], left, top
+
     def add_emoji_to_frame(self, frame, emoji_path, position):
         """Adds an emoji to the frame at the specified position."""
         emoji_img = Image.open(emoji_path).convert("RGBA")
