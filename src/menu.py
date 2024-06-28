@@ -1,14 +1,11 @@
 import datetime
 
+import cv2
 import matplotlib.dates as mdates
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from PySide6.QtCore import Qt, QTimer
-from PySide6.QtGui import (
-    QKeyEvent,
-    QTextCursor,
-    QTextDocument
-)
+from PySide6.QtGui import QKeyEvent
 from PySide6.QtWidgets import (
     QApplication,
     QDialog,
@@ -17,9 +14,9 @@ from PySide6.QtWidgets import (
     QPushButton,
     QStackedWidget,
     QTabWidget,
+    QTextEdit,
     QVBoxLayout,
     QWidget,
-    QTextEdit,
 )
 
 from src import DatabaseManager, EmotionTexts, FrameProcessor
@@ -38,6 +35,7 @@ class EmotionApp(QWidget):
         self.emotion_analyzer = EmotionAnalyzer()
         self.frame_processor = FrameProcessor()
         self.emotion_texts = EmotionTexts()
+        self.single_person_mode = True
 
         self.firstPageWidget = QWidget()
         self.mainPageWidget = QWidget()
@@ -67,26 +65,34 @@ class EmotionApp(QWidget):
         self.welcome_label = QLabel("Good morning amazing Human!", self)
         self.welcome_label.setStyleSheet("color: pink; font-size: 44px")
         firstpage_layout.addWidget(self.welcome_label, alignment=Qt.AlignCenter)
-        description_label = QLabel("Get a reading of your emotion, age and gender by \n me, Sam, an AI bot... While getting your coffee or tea. \n Have fun with it!")
+        description_label = QLabel(
+            "Get a reading of your emotion, age and gender by \n me, Sam, an AI bot... While getting your coffee or tea. \n Have fun with it!"
+        )
         description_label.setStyleSheet("color: black; font-size: 30px")
         firstpage_layout.addWidget(description_label, alignment=Qt.AlignCenter)
 
         self.continue_button = QPushButton("Start camera", self)
-        self.continue_button.setFixedSize(130,90)
-        self.continue_button.setStyleSheet("border-radius: 5%; background-color: pink; color: white; font-size: 18px")
+        self.continue_button.setFixedSize(130, 90)
+        self.continue_button.setStyleSheet(
+            "border-radius: 5%; background-color: pink; color: white; font-size: 18px"
+        )
         firstpage_layout.addWidget(self.continue_button, alignment=Qt.AlignCenter)
         self.continue_button.clicked.connect(self.changeScreen)
 
-        #Trend to be launched in next version
-        #self.trend_button = QPushButton("View trend", self)
-        #self.trend_button.setFixedSize(100, 60)
-        #self.trend_button.setStyleSheet("border: 3px solid pink;border-radius: 2%; background-color: white; color: black; font-size: 18px")
-        #firstpage_layout.addWidget(self.trend_button, alignment=Qt.AlignCenter)
-        #self.trend_button.clicked.connect(self.show_trends_dialog)
+        # Trend to be launched in next version
+        # self.trend_button = QPushButton("View trend", self)
+        # self.trend_button.setFixedSize(100, 60)
+        # self.trend_button.setStyleSheet("border: 3px solid pink;border-radius: 2%; background-color: white; color: black; font-size: 18px")
+        # firstpage_layout.addWidget(self.trend_button, alignment=Qt.AlignCenter)
+        # self.trend_button.clicked.connect(self.show_trends_dialog)
 
-        #TODO ADD GDPR Popup!
-        self.gdpr_button = QPushButton("Read how we handle the information according to GDPR.", self)
-        self.gdpr_button.setStyleSheet("color: black; font-size: 20; text-decoration: underline; border: 10px solid white;")
+        # TODO ADD GDPR Popup!
+        self.gdpr_button = QPushButton(
+            "Read how we handle the information according to GDPR.", self
+        )
+        self.gdpr_button.setStyleSheet(
+            "color: black; font-size: 20; text-decoration: underline; border: 10px solid white;"
+        )
         firstpage_layout.addWidget(self.gdpr_button, alignment=Qt.AlignCenter)
         self.gdpr_button.clicked.connect(self.show_gdpr_dialog)
 
@@ -97,7 +103,7 @@ class EmotionApp(QWidget):
         self.gdpr_title = QLabel("Privacy policy", self)
         self.gdpr_title.setStyleSheet("text-decoration: bold; font-size: 40")
         self.gdpr_text = QTextEdit("", self)
-        
+
         html_content = """
         How we handle your personal data according to GDPR.\nConsent and Data Collection:\n
         <ul>
@@ -107,7 +113,7 @@ class EmotionApp(QWidget):
             </li>
             <li>
                 Regardless of your choice, the photo will be deleted immediately after the AI assessment.
-            </li> 
+            </li>
         </ul>
         Anonymity and Data Protection:
         <ul>
@@ -120,7 +126,7 @@ class EmotionApp(QWidget):
         </ul>
         For more information on how we handle your personal data, <a href="http://google.com" style="text-decoration: underline;">...'s full Privacy policy</a>
         """
-        
+
         self.gdpr_text.setHtml(html_content)
         self.gdpr_text.setReadOnly(True)
         gdpr_layout = QVBoxLayout(self.gdpr_window)
@@ -129,8 +135,6 @@ class EmotionApp(QWidget):
         gdpr_layout.addWidget(self.text, 0, Qt.AlignCenter)
 
         self.gdpr_window.exec()
-
-
 
     def changeScreen(self):
         self.stackedWidget.setCurrentWidget(self.mainPageWidget)
@@ -143,6 +147,7 @@ class EmotionApp(QWidget):
 
         self.setup_image_display(main_layout)
         self.setup_buttons(main_layout)
+        self.setup_toggle(main_layout)
         self.setup_timer()
 
     def setup_timer(self):
@@ -207,6 +212,17 @@ class EmotionApp(QWidget):
         self.image_label.setStyleSheet("border: 5px solid pink")
         self.image_label.setFixedSize(label_width, label_height)
 
+    def setup_toggle(self, main_layout):
+        self.toggle_blur_button = QPushButton("Toggle Blur", self)
+        self.toggle_blur_button.setFixedSize(100, 50)  # Adjust the size as needed
+        self.toggle_blur_button.setStyleSheet("background-color: grey;")
+        self.toggle_blur_button.clicked.connect(self.toggle_single_person_mode)
+        main_layout.addWidget(self.toggle_blur_button)
+
+    def toggle_single_person_mode(self):
+        self.single_person_mode = not self.single_person_mode
+        print(f"Single person mode set to: {self.single_person_mode}")
+
     def showEvent(self, event):
         super().showEvent(event)
         screen = QApplication.primaryScreen()
@@ -222,6 +238,8 @@ class EmotionApp(QWidget):
         if self.live_video:
             frame = self.frame_processor.capture_frame()
             if frame is not None:
+                if self.single_person_mode:
+                    frame = self.frame_processor.blur_edges(frame)
                 self.display_image(frame)
 
     def display_image(self, frame):
@@ -260,6 +278,13 @@ class EmotionApp(QWidget):
         self.discard_button.setVisible(True)
         self.trend_button.setVisible(True)
         if frame is not None:
+            if self.single_person_mode:
+                blurred_frame = self.frame_processor.blur_edges(frame)
+                mask = self.frame_processor.create_face_mask(frame)
+                frame = cv2.bitwise_and(frame, frame, mask=mask)
+            else:
+                blurred_frame = frame
+
             # MTCNN face detection
             self.face_detector = FaceDetector(model_name="mtcnn")
             mtcnn_face_boxes = self.face_detector.detect_faces(frame)
@@ -282,13 +307,13 @@ class EmotionApp(QWidget):
             # Display annotated frame
             if self.current_results:
                 annotated_frame = self.frame_processor.annotate_frame(
-                    frame, self.current_results
+                    blurred_frame, self.current_results
                 )
                 self.display_image(annotated_frame)
                 self.current_frame = annotated_frame
             else:
-                self.display_image(frame)
-                self.current_frame = frame
+                self.display_image(blurred_frame)
+                self.current_frame = blurred_frame
 
             self.update_button_states(
                 accept_button=True, discard_button=True, capture_button=False
