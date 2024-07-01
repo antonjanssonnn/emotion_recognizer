@@ -2,7 +2,7 @@ import cv2
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from PySide6.QtCore import Qt, QTimer
-from PySide6.QtGui import QKeyEvent
+from PySide6.QtGui import QKeyEvent, QPainter
 from PySide6.QtWidgets import (
     QApplication,
     QDialog,
@@ -14,6 +14,7 @@ from PySide6.QtWidgets import (
     QTextEdit,
     QVBoxLayout,
     QWidget,
+    QMessageBox
 )
 
 from src import DatabaseManager, EmotionTexts, FrameProcessor, Graph
@@ -183,7 +184,7 @@ class EmotionApp(QWidget):
         self.retake_button.setVisible(False)
         # self.trend_button.setVisible(False)
 
-        # Horisontal Layout - Handling the horisontal position! Focus on Accept and Discard button.
+        # Horisontal Layout - Handling the horisontal position!
         horisontal_layout = QHBoxLayout()
         horisontal_layout.addStretch()
         horisontal_layout.addWidget(self.accept_button, alignment=Qt.AlignCenter)
@@ -201,6 +202,23 @@ class EmotionApp(QWidget):
         self.discard_button.clicked.connect(self.discard_image)
         self.retake_button.clicked.connect(self.retake_image)
         # self.trend_button.clicked.connect(self.show_trends_dialog)
+    
+    def show_pop_up_discarded(self):
+        popup = QMessageBox(self)
+        popup.setWindowTitle("")
+        popup.setText("Picture Discarded!")
+        popup.show()
+        # Close the popup after 5 seconds
+        QTimer.singleShot(5000, popup.close)
+    
+    def show_accept_image_popup(self):
+        popup = QMessageBox(self)
+        popup.setWindowTitle("")
+        popup.setText("Thank you! \n Emotion was saved")
+        popup.show()
+        # Close the popup after 5 seconds
+        QTimer.singleShot(5000, popup.close)
+
 
     def retake_image(self):
         self.update_button_states(
@@ -230,7 +248,7 @@ class EmotionApp(QWidget):
         self.image_label.setFixedSize(label_width, label_height)
 
     def setup_toggle(self, main_layout):
-        self.toggle_blur_button = QPushButton("Toggle Blur", self)
+        self.toggle_blur_button = QPushButton("Friends or Alone", self)
         self.toggle_blur_button.setFixedSize(100, 50)  # Adjust the size as needed
         self.toggle_blur_button.setStyleSheet("background-color: grey;")
         self.toggle_blur_button.clicked.connect(self.toggle_single_person_mode)
@@ -376,46 +394,6 @@ class EmotionApp(QWidget):
         self.show_accept_image_popup()
         self.stackedWidget.setCurrentWidget(self.firstPageWidget)
 
-    def show_accept_image_popup(self):
-        print("CLICKED")
-        self.popup_window = QDialog(self)
-        self.popup_window.setWindowTitle("Privacy policy")
-        self.popup_title = QLabel("Privacy policy", self)
-        self.popup_title.setStyleSheet("text-decoration: bold; font-size: 40")
-        self.popup_text = QTextEdit("", self)
-
-        html_content = """
-        How we handle your personal data according to GDPR.\nConsent and Data Collection:\n
-        <ul>
-            <li>
-                You have the choice to allow photo to be taken.
-                Once the photo is taken and your mood, age and gender have been registered by AI, you can choose whether the mood should be saved or discarded.
-            </li>
-            <li>
-                Regardless of your choice, the photo will be deleted immediately after the AI assessment.
-            </li>
-        </ul>
-        Anonymity and Data Protection:
-        <ul>
-            <li>
-                Your anonymity is protected; no personally identifiable information is collected during this process.
-            </li>
-            <li>
-                Only your mood will be saved if you choose to do so.
-            </li>
-        </ul>
-        For more information on how we handle your personal data, <a href="http://google.com" style="text-decoration: underline;">...'s full Privacy policy</a>
-        """
-
-        self.popup_text.setHtml(html_content)
-        self.popup_text.setReadOnly(True)
-        popup_layout = QVBoxLayout(self.popup_window)
-        self.text = QLabel("GDPR", self)
-        popup_layout.addWidget(self.popup_text, 0, Qt.AlignCenter)
-        popup_layout.addWidget(self.text, 0, Qt.AlignCenter)
-
-        self.popup_window.exec()
-
     def discard_image(self):
         self.update_button_states(
             accept_button=False, discard_button=False, capture_button=True
@@ -425,7 +403,9 @@ class EmotionApp(QWidget):
         self.discard_button.setVisible(False)
         # self.trend_button.setVisible(False)
         self.capture_button.setVisible(True)
+        self.retake_button.setVisible(False)
         # ADD POPUP THAT SHOWS FOR 5 seconds
+        self.show_pop_up_discarded()
         self.stackedWidget.setCurrentWidget(self.firstPageWidget)
         print("Image was discarded!")
 
