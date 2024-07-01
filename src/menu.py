@@ -1,7 +1,7 @@
 import cv2
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
-from PySide6.QtCore import Qt, QTimer
+from PySide6.QtCore import Qt, QTimer, QRect, QPropertyAnimation
 from PySide6.QtGui import QKeyEvent, QPainter
 from PySide6.QtWidgets import (
     QApplication,
@@ -14,7 +14,8 @@ from PySide6.QtWidgets import (
     QTextEdit,
     QVBoxLayout,
     QWidget,
-    QMessageBox
+    QMessageBox,
+    QSlider
 )
 
 from src import DatabaseManager, EmotionTexts, FrameProcessor, Graph
@@ -145,7 +146,6 @@ class EmotionApp(QWidget):
 
         self.setup_image_display(main_layout)
         self.setup_buttons(main_layout)
-        self.setup_toggle(main_layout)
         self.setup_timer()
 
     def setup_timer(self):
@@ -156,26 +156,55 @@ class EmotionApp(QWidget):
     def setup_buttons(self, main_layout):
         # Capture Button
         self.capture_button = QPushButton("", self)
-        self.capture_button.setFixedSize(100, 100)  # Adjust the size as needed
-        self.capture_button.setStyleSheet("border-radius: 50%; background-color: grey;")
+        self.capture_button.setFixedSize(70, 70)  # Adjust the size as needed
+        self.capture_button.setStyleSheet("border: 5px solid purple; border-radius: 35px; background-color: pink;")
 
+        # Toggle Blur Button 
+     #   self.toggle_blur_button = QPushButton("Friends or Alone", self)
+      #  self.toggle_blur_button.setFixedSize(100, 50)  # Adjust the size as needed
+       # self.toggle_blur_button.setStyleSheet("background-color: grey;")
+
+        # Create the background frame
+        self.frame = QPushButton("Only me", self)
+        self.frame.setFixedSize(100, 50)
+        self.frame.setStyleSheet("background-color: lightgray; border: 2px solid black; border-radius: 25px;")
+        self.frame.setEnabled(False)
+
+        # Create the toggle button
+        firstHorisontalLayour = QHBoxLayout()
+        firstHorisontalLayour.addStretch()
+        self.toggle_button = QPushButton("Me & My Friends", self)
+        self.toggle_button.setCheckable(True)
+        self.toggle_button.setFixedSize(100, 50)
+        self.toggle_button.setStyleSheet("background-color: white; border: 2px solid black; border-radius: 25px;")
+        self.toggle_button.move(0, 0)
+        self.toggle_button.clicked.connect(self.animate)
+        firstHorisontalLayour.addWidget(self.frame, alignment=Qt.AlignCenter)
+        firstHorisontalLayour.addStretch()
+        firstHorisontalLayour.addWidget(self.toggle_button, alignment=Qt.AlignCenter)
+        firstHorisontalLayour.addStretch()
+
+        self.animation = QPropertyAnimation(self.toggle_button, b"geometry")
+        
         # Vertical Layout
         vertical_layout = QVBoxLayout()
         vertical_layout.addStretch()
         vertical_layout.addWidget(self.image_label, alignment=Qt.AlignCenter)
+        vertical_layout.addStretch()
         vertical_layout.addWidget(self.capture_button, alignment=Qt.AlignCenter)
         vertical_layout.addStretch()
         main_layout.addLayout(vertical_layout)
 
+
         # Buttons
         self.retake_button = QPushButton("Retake", self)
-        self.retake_button.setFixedSize(100, 100)
+        self.retake_button.setFixedSize(70, 70)
         self.retake_button.setStyleSheet("border: 3px solid pink; border-radius: 5%;")
         self.accept_button = QPushButton("Accept", self)
-        self.accept_button.setFixedSize(100, 100)
+        self.accept_button.setFixedSize(70, 70)
         self.accept_button.setStyleSheet("border: 3px solid pink; border-radius: 5%;")
         self.discard_button = QPushButton("Discard", self)
-        self.discard_button.setFixedSize(100, 100)
+        self.discard_button.setFixedSize(70, 70)
         self.discard_button.setStyleSheet("border: 3px solid pink; border-radius: 5%;")
         # self.trend_button = QPushButton("Show Trends", self)
         self.capture_button.setVisible(True)
@@ -201,7 +230,19 @@ class EmotionApp(QWidget):
         self.accept_button.clicked.connect(self.accept_image)
         self.discard_button.clicked.connect(self.discard_image)
         self.retake_button.clicked.connect(self.retake_image)
+        #self.toggle_blur_button.clicked.connect(self.toggle_single_person_mode)
         # self.trend_button.clicked.connect(self.show_trends_dialog)
+    
+    def animate(self):
+        if self.toggle_button.isChecked():
+            self.animation.setEndValue(QRect(50, 0, 50, 50))
+            self.frame.setStyleSheet("background-color: pink; border: 2px solid black; border-radius: 25px;")
+        else:
+            self.animation.setEndValue(QRect(0, 0, 50, 50))
+            self.frame.setStyleSheet("background-color: white; border: 2px solid black; border-radius: 25px;")
+
+        self.animation.setDuration(200)  # Animation duration in milliseconds
+        self.animation.start()
     
     def show_pop_up_discarded(self):
         popup = QMessageBox(self)
@@ -244,8 +285,8 @@ class EmotionApp(QWidget):
         # Calculate the size with 25% margins on each side
         label_width = int(window_width)  # 50% of window width
         label_height = int(window_height)  # 50% of window height
-        self.image_label.setStyleSheet("border: 5px solid pink")
         self.image_label.setFixedSize(label_width, label_height)
+        self.image_label.setStyleSheet("border: 5px solid pink; border-radius: 10%")
 
     def setup_toggle(self, main_layout):
         self.toggle_blur_button = QPushButton("Friends or Alone", self)
