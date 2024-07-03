@@ -425,11 +425,13 @@ class EmotionApp(QWidget):
         self.accept_button.setVisible(False)
         self.discard_button.setVisible(False)
         # self.trend_button.setVisible(False)
-        self.capture_button.setVisible(False)
-        self.live_video = False
+        self.capture_button.setVisible(True)
+        self.retake_button.setVisible(False)
+        self.live_video = True
         # ADD POPUP THAT SHOWS FOR 5 seconds
         self.show_accept_image_popup()
         self.stackedWidget.setCurrentWidget(self.firstPageWidget)
+        print("Image was saved")
 
     def discard_image(self):
         self.update_button_states(
