@@ -131,7 +131,7 @@ class FrameProcessor:
             x, y, w, h = region["x"], region["y"], region["w"], region["h"]
 
             # Draw the bounding box
-            cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
+            cv2.rectangle(frame, (x, y), (x + w, y + h), (110,188,62), 2)
             emotion = result[0]["dominant_emotion"]
             age = result[0]["age"]
             gender = result[0]["dominant_gender"]

@@ -61,19 +61,19 @@ class EmotionApp(QWidget):
         firstpage_layout = QVBoxLayout(self.firstPageWidget)
         self.setLayout(firstpage_layout)
 
-        self.welcome_label = QLabel("Good morning amazing Human!", self)
-        self.welcome_label.setStyleSheet("color: pink; font-size: 44px")
+        self.welcome_label = QLabel("Good morning\namazing Human!", self)
+        self.welcome_label.setStyleSheet("color: #EA148C; font-size: 60px; font-weight: 700;")
         firstpage_layout.addWidget(self.welcome_label, alignment=Qt.AlignCenter)
         description_label = QLabel(
             "Get a reading of your emotion, age and gender by \nme, Sam, an AI bot... While getting your coffee or tea. \nHave fun with it!"
         )
-        description_label.setStyleSheet("color: black; font-size: 30px")
+        description_label.setStyleSheet("color: black; font-size: 23px; font-weight: 400")
         firstpage_layout.addWidget(description_label, alignment=Qt.AlignCenter)
 
         self.continue_button = QPushButton("Start camera", self)
-        self.continue_button.setFixedSize(130, 90)
+        self.continue_button.setFixedSize(243, 70)
         self.continue_button.setStyleSheet(
-            "border-radius: 5%; background-color: pink; color: white; font-size: 18px"
+            "border-radius: 10px; background-color: #EA148C; color: #FFFFFF; font-size: 25px; font-weight: 600;"
         )
         firstpage_layout.addWidget(self.continue_button, alignment=Qt.AlignCenter)
         self.continue_button.clicked.connect(self.changeScreen)
@@ -90,7 +90,7 @@ class EmotionApp(QWidget):
             "Read how we handle the information according to GDPR.", self
         )
         self.gdpr_button.setStyleSheet(
-            "color: black; font-size: 20; text-decoration: underline; border: 10px solid white;"
+            "color: #333333; font-size: 16; text-decoration: underline; border: 10px solid white; font-weight: 400;"
         )
         firstpage_layout.addWidget(self.gdpr_button, alignment=Qt.AlignCenter)
         self.gdpr_button.clicked.connect(self.show_gdpr_dialog)
@@ -156,8 +156,8 @@ class EmotionApp(QWidget):
     def setup_buttons(self, main_layout):
         # Capture Button
         self.capture_button = QPushButton("", self)
-        self.capture_button.setFixedSize(70, 70)  # Adjust the size as needed
-        self.capture_button.setStyleSheet("border: 5px solid purple; border-radius: 35px; background-color: pink;")
+        self.capture_button.setFixedSize(80, 80)  # Adjust the size as needed
+        self.capture_button.setStyleSheet("border: 5px solid #EA148C; border-radius: 40px; background: #F3E3EA;")
 
         # Toggle Blur Button 
      #   self.toggle_blur_button = QPushButton("Friends or Alone", self)
@@ -165,27 +165,25 @@ class EmotionApp(QWidget):
        # self.toggle_blur_button.setStyleSheet("background-color: grey;")
 
         # Create the background frame
+        first_horisontal_layout = QHBoxLayout()
         self.frame = QPushButton("Only me", self)
-        self.frame.setFixedSize(100, 50)
+        self.frame.setFixedSize(300, 50)
         self.frame.setStyleSheet("background-color: lightgray; border: 2px solid black; border-radius: 25px;")
         self.frame.setEnabled(False)
 
         # Create the toggle button
-        firstHorisontalLayour = QHBoxLayout()
-        firstHorisontalLayour.addStretch()
         self.toggle_button = QPushButton("Me & My Friends", self)
         self.toggle_button.setCheckable(True)
         self.toggle_button.setFixedSize(100, 50)
         self.toggle_button.setStyleSheet("background-color: white; border: 2px solid black; border-radius: 25px;")
-        self.toggle_button.move(0, 0)
         self.toggle_button.clicked.connect(self.animate)
-        firstHorisontalLayour.addWidget(self.frame, alignment=Qt.AlignCenter)
-        firstHorisontalLayour.addStretch()
-        firstHorisontalLayour.addWidget(self.toggle_button, alignment=Qt.AlignCenter)
-        firstHorisontalLayour.addStretch()
 
         self.animation = QPropertyAnimation(self.toggle_button, b"geometry")
         
+        first_horisontal_layout.addWidget(self.frame, Qt.AlignCenter)
+        first_horisontal_layout.addWidget(self.toggle_button, Qt.AlignCenter)
+
+        main_layout.addLayout(first_horisontal_layout)
         # Vertical Layout
         vertical_layout = QVBoxLayout()
         vertical_layout.addStretch()
@@ -198,14 +196,14 @@ class EmotionApp(QWidget):
 
         # Buttons
         self.retake_button = QPushButton("Retake", self)
-        self.retake_button.setFixedSize(70, 70)
-        self.retake_button.setStyleSheet("border: 3px solid pink; border-radius: 5%;")
-        self.accept_button = QPushButton("Accept", self)
-        self.accept_button.setFixedSize(70, 70)
-        self.accept_button.setStyleSheet("border: 3px solid pink; border-radius: 5%;")
+        self.retake_button.setFixedSize(172, 63)
+        self.retake_button.setStyleSheet("border: 3px solid #EA148C; background: #FFFFFF; border-radius: 15px; font-size: 20px; font-weight: 500")
+        self.accept_button = QPushButton("Save Emotion", self)
+        self.accept_button.setFixedSize(196, 63)
+        self.accept_button.setStyleSheet("border: 1px solid #F1A3C6; border-radius: 15px; background: #EA148C; font-size: 20px; font-weight: 600")
         self.discard_button = QPushButton("Discard", self)
-        self.discard_button.setFixedSize(70, 70)
-        self.discard_button.setStyleSheet("border: 3px solid pink; border-radius: 5%;")
+        self.discard_button.setFixedSize(179, 63)
+        self.discard_button.setStyleSheet("border: 3px solid #D90C0C; background: #FFF3F8; border-radius: 15px; font-size: 20px; font-weight: 500")
         # self.trend_button = QPushButton("Show Trends", self)
         self.capture_button.setVisible(True)
         self.accept_button.setVisible(False)
@@ -216,9 +214,9 @@ class EmotionApp(QWidget):
         # Horisontal Layout - Handling the horisontal position!
         horisontal_layout = QHBoxLayout()
         horisontal_layout.addStretch()
-        horisontal_layout.addWidget(self.accept_button, alignment=Qt.AlignCenter)
-        horisontal_layout.addWidget(self.discard_button, alignment=Qt.AlignCenter)
         horisontal_layout.addWidget(self.retake_button, alignment=Qt.AlignCenter)
+        horisontal_layout.addWidget(self.discard_button, alignment=Qt.AlignCenter)
+        horisontal_layout.addWidget(self.accept_button, alignment=Qt.AlignCenter)
         horisontal_layout.addStretch()
         main_layout.addLayout(horisontal_layout)
 
@@ -235,10 +233,8 @@ class EmotionApp(QWidget):
     
     def animate(self):
         if self.toggle_button.isChecked():
-            self.animation.setEndValue(QRect(50, 0, 50, 50))
             self.frame.setStyleSheet("background-color: pink; border: 2px solid black; border-radius: 25px;")
         else:
-            self.animation.setEndValue(QRect(0, 0, 50, 50))
             self.frame.setStyleSheet("background-color: white; border: 2px solid black; border-radius: 25px;")
 
         self.animation.setDuration(200)  # Animation duration in milliseconds
@@ -286,7 +282,7 @@ class EmotionApp(QWidget):
         label_width = int(window_width)  # 50% of window width
         label_height = int(window_height)  # 50% of window height
         self.image_label.setFixedSize(label_width, label_height)
-        self.image_label.setStyleSheet("border: 5px solid pink; border-radius: 10%")
+        self.image_label.setStyleSheet("border: 10px solid #F292BB; border-radius: 30px")
 
     def setup_toggle(self, main_layout):
         self.toggle_blur_button = QPushButton("Friends or Alone", self)
