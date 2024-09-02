@@ -1,3 +1,15 @@
+# Facial-Emotion-Recognintion-using-OpenCV-and-Deepface
+A project owned by CoNest. Started by Joel Postonen, and Anton Jansson (Not at HiQ anymore (left 3/9-2024)). Built upon the Facial-Emotion-Recognintion-using-OpenCV-and-Deepface `https://github.com/manish-9245/Facial-Emotion-Recognition-using-OpenCV-and-Deepface`.
+Then built quick and dirty to get something going. The graphical interfaces are built with the QT-python library. 
+
+Current issues:
+   - Slow refresh-reate of camera capture.
+   - Graphical and user interfaces needs updating.
+   - Restructure of code.
+   - Tests needed.
+   - Need to find hardware to run the software
+
+
 # Facial-Emotion-Recognition-using-OpenCV-and-Deepface
 This project implements real-time facial emotion detection using the `deepface` library and OpenCV. It captures video from the webcam, detects faces, and predicts the emotions associated with each face. The emotion labels are displayed on the frames in real-time.
 This is probably the shortest code to implement realtime emotion monitoring.
