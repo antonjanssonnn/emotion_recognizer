@@ -131,46 +131,79 @@ class FrameProcessor:
             x, y, w, h = region["x"], region["y"], region["w"], region["h"]
 
             # Draw the bounding box
-            cv2.rectangle(frame, (x, y), (x + w, y + h), (110,188,62), 2)
+            cv2.rectangle(frame, (x, y), (x + w, y + h), (110,188,62), 3)
             emotion = result[0]["dominant_emotion"]
             age = result[0]["age"]
             gender = result[0]["dominant_gender"]
 
-            # Draw text for emotion, age, gender
-            cv2.putText(
-                frame,
-                f"Age: {age}",
-                (x, y + h + 20),
-                cv2.FONT_HERSHEY_SIMPLEX,
-                0.5,
-                (255, 255, 255),
-                2,
-            )
-            cv2.putText(
-                frame,
-                f"Emotion: {emotion}",
-                (x, y + h + 40),
-                cv2.FONT_HERSHEY_SIMPLEX,
-                0.5,
-                (255, 255, 255),
-                2,
-            )
-            cv2.putText(
-                frame,
-                f"Gender: {gender}",
-                (x, y + h + 60),
-                cv2.FONT_HERSHEY_SIMPLEX,
-                0.5,
-                (255, 255, 255),
-                2,
-            )
-
+            self.draw_speech_bubble(frame, x, y, w, h, age, emotion, gender)
+            
             # Add emoji
             if emotion in self.EMOTION_EMOJI_MAP:
                 emoji_path = self.EMOTION_EMOJI_MAP[emotion]
                 frame = self.add_emoji_to_frame(frame, emoji_path, (x, y + 120))
 
         return frame
+
+    def draw_speech_bubble(self, frame, x, y, w, h, age, emotion, gender):
+        # Define bubble dimensions
+        bubble_width = 150
+        bubble_height = 70
+        bubble_padding = 10
+        bubble_color = (234, 20, 140)  # Light pink
+        text_color = (255, 255, 255)    # White
+
+        # Calculate bubble position
+        bubble_x = x
+        bubble_y = y - bubble_height - bubble_padding
+        if bubble_y < 0:  # Ensure the bubble is within frame bounds
+            bubble_y = y + h + bubble_padding
+
+        # Draw the rectangle for the bubble
+        cv2.rectangle(
+            frame,
+            (bubble_x, bubble_y),
+            (bubble_x + bubble_width, bubble_y + bubble_height),
+            bubble_color,
+            cv2.FILLED
+        )
+
+        # Draw the triangular part of the speech bubble (tail)
+        triangle_points = [
+            (x + w // 2, y),                       # Top middle of the detected face
+            (bubble_x + bubble_width // 2 - 10, bubble_y + bubble_height),  # Bottom left of the bubble
+            (bubble_x + bubble_width // 2 + 10, bubble_y + bubble_height)   # Bottom right of the bubble
+        ]
+        cv2.drawContours(frame, [np.array(triangle_points, np.int32)], 0, bubble_color, cv2.FILLED)
+
+        # Draw text inside the bubble
+        cv2.putText(
+            frame,
+            f"Age: {age}",
+            (bubble_x + bubble_padding, bubble_y + 20),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            0.5,
+            text_color,
+            2
+        )
+        cv2.putText(
+            frame,
+            f"Emotion: {emotion}",
+            (bubble_x + bubble_padding, bubble_y + 40),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            0.5,
+            text_color,
+            2
+        )
+        cv2.putText(
+            frame,
+            f"Gender: {gender}",
+            (bubble_x + bubble_padding, bubble_y + 60),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            0.5,
+            text_color,
+            2
+        )
 
     def release_resources(self):
         """Releases the camera."""

@@ -17,7 +17,7 @@ from PySide6.QtWidgets import (
     QMessageBox,
     QSlider
 )
-
+from datetime import datetime
 from src import DatabaseManager, EmotionTexts, FrameProcessor, Graph
 from src.emotion_analyzer import EmotionAnalyzer
 from src.face_detection import FaceDetector
@@ -46,6 +46,13 @@ class EmotionApp(QWidget):
         layout.setSpacing(0)  # Remove spacing
         layout.addWidget(self.stackedWidget)
         self.setLayout(layout)
+        # Close Button
+        self.close_button = QPushButton("Close", self)
+        self.close_button.setFixedSize(95, 63)
+        self.close_button.setStyleSheet("border: 3px solid #EA148C; background: #FFFFFF; border-radius: 15px; font-size: 20px; font-weight: 500")
+        self.close_button.hide()
+        self.close_button.move(860, 570)
+        self.close_button.clicked.connect(self.close_camera)
         self.live_video = True
         self.current_frame = None
         self.current_results = None
@@ -60,8 +67,16 @@ class EmotionApp(QWidget):
         self.firstPageWidget.setStyleSheet("background-color: white")
         firstpage_layout = QVBoxLayout(self.firstPageWidget)
         self.setLayout(firstpage_layout)
+        current_hour = datetime.now().hour
 
-        self.welcome_label = QLabel("Good morning\namazing Human!", self)
+        if 8 <= current_hour < 12:
+            greeting = "Good morning"
+        elif 12 <= current_hour < 17:
+            greeting = "Good day"
+        else:
+            greeting = "Good evening"
+                        
+        self.welcome_label = QLabel(f"{greeting}\namazing Human!", self)
         self.welcome_label.setStyleSheet("color: #EA148C; font-size: 60px; font-weight: 700;")
         firstpage_layout.addWidget(self.welcome_label, alignment=Qt.AlignCenter)
         description_label = QLabel(
@@ -136,6 +151,7 @@ class EmotionApp(QWidget):
         self.gdpr_window.exec()
 
     def changeScreen(self):
+        self.close_button.show()
         self.stackedWidget.setCurrentWidget(self.mainPageWidget)
 
     def initUI(self):
@@ -150,6 +166,7 @@ class EmotionApp(QWidget):
 
     def setup_timer(self):
         self.timer = QTimer(self)
+        self.timer.setTimerType(Qt.PreciseTimer)
         self.timer.timeout.connect(self.update_frame)
         self.timer.start(20)
 
@@ -159,28 +176,17 @@ class EmotionApp(QWidget):
         self.capture_button.setFixedSize(80, 80)  # Adjust the size as needed
         self.capture_button.setStyleSheet("border: 5px solid #EA148C; border-radius: 40px; background: #F3E3EA;")
 
-        # Toggle Blur Button 
-     #   self.toggle_blur_button = QPushButton("Friends or Alone", self)
-      #  self.toggle_blur_button.setFixedSize(100, 50)  # Adjust the size as needed
-       # self.toggle_blur_button.setStyleSheet("background-color: grey;")
-
         # Create the background frame
         first_horisontal_layout = QHBoxLayout()
-        self.frame = QPushButton("Only me", self)
-        self.frame.setFixedSize(300, 50)
-        self.frame.setStyleSheet("background-color: lightgray; border: 2px solid black; border-radius: 25px;")
-        self.frame.setEnabled(False)
-
         # Create the toggle button
-        self.toggle_button = QPushButton("Me & My Friends", self)
+        self.toggle_button = QPushButton("Groupie", self)
         self.toggle_button.setCheckable(True)
-        self.toggle_button.setFixedSize(100, 50)
-        self.toggle_button.setStyleSheet("background-color: white; border: 2px solid black; border-radius: 25px;")
+        self.toggle_button.setFixedSize(140, 50)
+        self.toggle_button.setStyleSheet("border: 3px solid #EA148C; background: #FFFFFF; border-radius: 15px; font-size: 20px; font-weight: 500;")
         self.toggle_button.clicked.connect(self.animate)
 
         self.animation = QPropertyAnimation(self.toggle_button, b"geometry")
         
-        first_horisontal_layout.addWidget(self.frame, Qt.AlignCenter)
         first_horisontal_layout.addWidget(self.toggle_button, Qt.AlignCenter)
 
         main_layout.addLayout(first_horisontal_layout)
@@ -189,10 +195,15 @@ class EmotionApp(QWidget):
         vertical_layout.addStretch()
         vertical_layout.addWidget(self.image_label, alignment=Qt.AlignCenter)
         vertical_layout.addStretch()
-        vertical_layout.addWidget(self.capture_button, alignment=Qt.AlignCenter)
-        vertical_layout.addStretch()
+        
         main_layout.addLayout(vertical_layout)
 
+        second_horisontal_layout = QHBoxLayout()
+        second_horisontal_layout.addWidget(self.capture_button, alignment=Qt.AlignCenter)
+    
+        self.toggle_button.clicked.connect(self.toggle_single_person_mode)
+
+        main_layout.addLayout(second_horisontal_layout)
 
         # Buttons
         self.retake_button = QPushButton("Retake", self)
@@ -204,11 +215,17 @@ class EmotionApp(QWidget):
         self.discard_button = QPushButton("Discard", self)
         self.discard_button.setFixedSize(179, 63)
         self.discard_button.setStyleSheet("border: 3px solid #D90C0C; background: #FFF3F8; border-radius: 15px; font-size: 20px; font-weight: 500")
+
         # self.trend_button = QPushButton("Show Trends", self)
         self.capture_button.setVisible(True)
         self.accept_button.setVisible(False)
         self.discard_button.setVisible(False)
         self.retake_button.setVisible(False)
+        print(self.stackedWidget.currentWidget())
+        if(self.stackedWidget.currentWidget() == self.firstPageWidget):
+            self.close_button.hide()
+        else:
+            self.close_button.show()
         # self.trend_button.setVisible(False)
 
         # Horisontal Layout - Handling the horisontal position!
@@ -218,8 +235,7 @@ class EmotionApp(QWidget):
         horisontal_layout.addWidget(self.discard_button, alignment=Qt.AlignCenter)
         horisontal_layout.addWidget(self.accept_button, alignment=Qt.AlignCenter)
         horisontal_layout.addStretch()
-        main_layout.addLayout(horisontal_layout)
-
+        main_layout.addLayout(horisontal_layout)        
         # #main_layout.addWidget(self.trend_button)
         # self.accept_button.setEnabled(False)
         # self.discard_button.setEnabled(False)
@@ -231,12 +247,31 @@ class EmotionApp(QWidget):
         #self.toggle_blur_button.clicked.connect(self.toggle_single_person_mode)
         # self.trend_button.clicked.connect(self.show_trends_dialog)
     
+    def close_camera(self):
+        self.close_button.hide()
+        self.update_button_states(
+            accept_button=False, discard_button=False, capture_button=True
+        )
+        self.live_video = True
+        self.accept_button.setVisible(False)
+        self.discard_button.setVisible(False)
+        # self.trend_button.setVisible(False)
+        self.capture_button.setVisible(True)
+        self.toggle_button.setVisible(True)
+        self.retake_button.setVisible(False)
+        # ADD POPUP THAT SHOWS FOR 5 seconds
+        self.show_pop_up_discarded()
+        self.stackedWidget.setCurrentWidget(self.firstPageWidget)
+        print("Image was discarded!")
+        self.stackedWidget.setCurrentWidget(self.firstPageWidget)
+
     def animate(self):
         if self.toggle_button.isChecked():
-            self.frame.setStyleSheet("background-color: pink; border: 2px solid black; border-radius: 25px;")
+            self.toggle_button.setStyleSheet("border: 3px solid #EA148C; background: pink; border-radius: 15px; font-size: 20px; font-weight: 500")
+            self.toggle_button.setText("Selfie")
         else:
-            self.frame.setStyleSheet("background-color: white; border: 2px solid black; border-radius: 25px;")
-
+            self.toggle_button.setStyleSheet("border: 3px solid #EA148C; background: #FFFFFF; border-radius: 15px; font-size: 20px; font-weight: 500;")
+            self.toggle_button.setText("Groupie")
         self.animation.setDuration(200)  # Animation duration in milliseconds
         self.animation.start()
     
@@ -249,6 +284,9 @@ class EmotionApp(QWidget):
         QTimer.singleShot(5000, popup.close)
     
     def show_accept_image_popup(self):
+        self.update_button_states(
+            accept_button=False, discard_button=False, capture_button=True
+        )
         popup = QMessageBox(self)
         popup.setWindowTitle("")
         popup.setText("Thank you! \n Emotion was saved")
@@ -266,6 +304,8 @@ class EmotionApp(QWidget):
         self.discard_button.setVisible(False)
         # self.trend_button.setVisible(False)
         self.capture_button.setVisible(True)
+        self.toggle_button.setVisible(True)
+        self.close_button.show()
         self.retake_button.setVisible(False)
         # ADD POPUP THAT SHOWS FOR 5 seconds
         self.stackedWidget.setCurrentWidget(self.mainPageWidget)
@@ -282,16 +322,10 @@ class EmotionApp(QWidget):
         label_width = int(window_width)  # 50% of window width
         label_height = int(window_height)  # 50% of window height
         self.image_label.setFixedSize(label_width, label_height)
-        self.image_label.setStyleSheet("border: 10px solid #F292BB; border-radius: 30px")
-
-    def setup_toggle(self, main_layout):
-        self.toggle_blur_button = QPushButton("Friends or Alone", self)
-        self.toggle_blur_button.setFixedSize(100, 50)  # Adjust the size as needed
-        self.toggle_blur_button.setStyleSheet("background-color: grey;")
-        self.toggle_blur_button.clicked.connect(self.toggle_single_person_mode)
-        main_layout.addWidget(self.toggle_blur_button)
+        self.image_label.setStyleSheet("border: 10px solid #F292BB; border-radius: 30px")        
 
     def toggle_single_person_mode(self):
+        print("HEHEHEEHEHEHHE")
         self.single_person_mode = not self.single_person_mode
         print(f"Single person mode set to: {self.single_person_mode}")
 
@@ -326,6 +360,8 @@ class EmotionApp(QWidget):
     def keyPressEvent(self, event: QKeyEvent):
         if event.key() == Qt.Key_Space:
             self.capture_button.setVisible(False)
+            self.close_button.show()
+            self.toggle_button.setVisible(False)
             self.accept_button.setVisible(True)
             self.discard_button.setVisible(True)
             # self.trend_button.setVisible(True)
@@ -335,7 +371,9 @@ class EmotionApp(QWidget):
             self.accept_button.setVisible(False)
             self.discard_button.setVisible(False)
             # self.trend_button.setVisible(False)
+            self.toggle_button.setVisible(True)
             self.capture_button.setVisible(True)
+            self.close_button.show()
             self.live_video = True
             print("Resuming live feed...")
         elif event.key() == Qt.Key_Q:
@@ -346,6 +384,8 @@ class EmotionApp(QWidget):
         self.live_video = False
         frame = self.frame_processor.capture_frame()
         self.capture_button.setVisible(False)
+        self.close_button.show()
+        self.toggle_button.setVisible(False)
         self.accept_button.setVisible(True)
         self.discard_button.setVisible(True)
         self.retake_button.setVisible(True)
@@ -426,6 +466,8 @@ class EmotionApp(QWidget):
         self.discard_button.setVisible(False)
         # self.trend_button.setVisible(False)
         self.capture_button.setVisible(True)
+        self.close_button.hide()
+        self.toggle_button.setVisible(True)
         self.retake_button.setVisible(False)
         self.live_video = True
         # ADD POPUP THAT SHOWS FOR 5 seconds
@@ -442,6 +484,8 @@ class EmotionApp(QWidget):
         self.discard_button.setVisible(False)
         # self.trend_button.setVisible(False)
         self.capture_button.setVisible(True)
+        self.close_button.hide()
+        self.toggle_button.setVisible(True)
         self.retake_button.setVisible(False)
         # ADD POPUP THAT SHOWS FOR 5 seconds
         self.show_pop_up_discarded()
